@@ -21,6 +21,10 @@ try {
 
 window.axios = require('axios');
 
+// if () {
+    window.axios.defaults.baseURL = 'placementtest';
+// }
+
 window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
 
 /**
