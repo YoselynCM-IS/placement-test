@@ -20,7 +20,7 @@ class TeacherController extends Controller
         $exams = Exam::where('teacher_id', auth()->user()->teacher->id)
                     ->where('send', true)
                     ->with('categories')
-                    ->orderBy('created_at', 'asc')->get();
+                    ->orderBy('created_at', 'desc')->get();
         return view('users.teacher.exams', compact('exams'));
     }
 

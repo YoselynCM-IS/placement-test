@@ -132,6 +132,7 @@ Vue.component('details-results', require('./components/groups/results/DetailsRes
 Vue.component('q-select-component', require('./components/independent/reagents/QSelectComponent.vue').default);
 Vue.component('q-open-component', require('./components/independent/reagents/QOpenComponent.vue').default);
 Vue.component('q-multiple-component', require('./components/independent/reagents/QMultipleComponent.vue').default);
+// Vue.component('q-match-component', require('./components/independent/reagents/QMatchComponent.vue').default);
 
 // QUESTIONS FORM
 Vue.component('form-select-component', require('./components/independent/reagents/form/FormSelectComponent.vue').default);

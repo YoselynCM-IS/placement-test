@@ -30,7 +30,7 @@ class SendData extends Mailable implements ShouldQueue
      */
     public function build()
     {
-        return $this->from('me.examencolocacion@gmail.com')
+        return $this->from('info@placementtestmajesticeducation.com')
             ->subject(__("Datos de acceso"))
             ->markdown('mails.access-system') //Template
             ->with('user', $this->user);

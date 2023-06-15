@@ -32,7 +32,7 @@ class AccessExam extends Mailable implements ShouldQueue
      */
     public function build()
     {
-        return $this->from('me.examencolocacion@gmail.com')
+        return $this->from('info@placementtestmajesticeducation.com')
             ->subject(__("Examen de colocación"))
             ->markdown('mails.access-exam') //Template
             ->with('exam', $this->exam)

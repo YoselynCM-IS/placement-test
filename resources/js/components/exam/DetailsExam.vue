@@ -70,6 +70,8 @@
                                     <q-multiple-component v-if="question.type_id == 3"
                                         :question="question">
                                     </q-multiple-component>
+                                    <!-- <q-match-component v-if="question.type_id == 4"
+                                        :question="question" :answers="answers"></q-match-component> -->
                                 </div>
                                 <div v-else>
                                     <b-row>
@@ -97,6 +99,7 @@ export default {
     mixins: [filterLevel],
     data(){
         return {
+            // answers: []
             
         }
     },
