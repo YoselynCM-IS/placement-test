@@ -12,5 +12,5 @@
 		<li>Correo electrónico: {{ $user->email }}</li>
 		<li>Contraseña: {{ $user->view_password }}</li>
 	</ul>
-	<a href="https://gentle-chamber-76410.herokuapp.com/login">Acceder al sistema</a>
+	<a href="https://placementtestmajesticeducation.com/login">Acceder al sistema</a>
 @endsection

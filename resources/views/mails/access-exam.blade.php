@@ -6,5 +6,5 @@
 	<p>El examen estará disponible de <b>{{ $exam->start_time }}</b> a <b>{{ $exam->end_time }}</b>.</p>
 	<hr>
 	<p>Gracias.</p>
-	<a href="https://gentle-chamber-76410.herokuapp.com/login">Acceder al sistema</a>
+	<a href="https://placementtestmajesticeducation.com/login">Acceder al sistema</a>
 @endsection
