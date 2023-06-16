@@ -635,8 +635,31 @@ class ExamController extends Controller
     public function save_questions(Request $request){
         $questions = collect($request->questions);
         $exam = Exam::find($request->exam_id);
+        \DB::beginTransaction();
+        try {
+            $questions->map(function($question){
+                $exam->questions()->attach($question['id'], [
+                    'instruction_id' => $question['instruction_id']
+                ]);
+            });
 
-        ExamSJob::dispatch($questions, $exam);
+            $exam->questions->map(function($question){
+                $q = \DB::table('exam_instruction')->where([
+                    'exam_id' => $exam->id,
+                    'instruction_id' => $question->instruction_id
+                ])->first();
+                if($q == null){
+                    $exam->instructions()->attach($question->instruction_id, [
+                        'level_id' => $question->instruction->topic->level_id
+                    ]);
+                }
+            });
+            
+            \DB::commit();
+        }  catch (Exception $e) {
+            \DB::rollBack();
+        }
+        // ExamSJob::dispatch($questions, $exam);
         return response()->json();
     }
 
