@@ -643,7 +643,7 @@ class ExamController extends Controller
                 ]);
             });
 
-            $exam->questions->map(function($question){
+            $exam->questions->map(function($question) use (&$exam){
                 $q = \DB::table('exam_instruction')->where([
                     'exam_id' => $exam->id,
                     'instruction_id' => $question->instruction_id
