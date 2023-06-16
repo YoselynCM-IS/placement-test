@@ -637,7 +637,7 @@ class ExamController extends Controller
         $exam = Exam::find($request->exam_id);
         \DB::beginTransaction();
         try {
-            $questions->map(function($question){
+            $questions->map(function($question) use (&$exam){
                 $exam->questions()->attach($question['id'], [
                     'instruction_id' => $question['instruction_id']
                 ]);
