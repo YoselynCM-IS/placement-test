@@ -7,7 +7,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
 
-class AccessExam extends Mailable implements ShouldQueue
+class AccessExam extends Mailable
 {
     use Queueable, SerializesModels;
 
