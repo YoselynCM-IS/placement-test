@@ -98,7 +98,7 @@ class GroupController extends Controller
         $user = User::firstOrCreate([
             'role_id'       => 3,
             'name'          => Str::of($name)->upper(),
-            'email'         => $email,
+            'email'         => trim($email),
             'password'      => bcrypt($password),
             'view_password' => $password
         ]);
