@@ -307,8 +307,7 @@ class ExamController extends Controller
 
         
         if(($number_correct == $number_questions) || ($number_correct >= ($number_questions - $exam->error_range))){
-            $last_relation = $exam->instructions()->get()->last();
-            $number_levels = $last_relation->pivot->level_id;
+            $number_levels = \DB::table('exam_instruction')->where('exam_id', $exam->id)->max('level_id');
             $number_level = $level_id + 1;
             if($number_level <= $number_levels){
                 $datos = $this->get_instQuestions($exam, $number_level);
