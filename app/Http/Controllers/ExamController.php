@@ -33,52 +33,53 @@ class ExamController extends Controller
         $this->dropbox = Storage::disk('dropbox')->getDriver()->getAdapter()->getClient();   
     }
 
-    // CREAR EXAMENES
-    public function create(Request $request){
-        $error_range = (int)$request->error_range;
-        $indications = $request->indications;
-        $group_id = $request->group_id;
-        // $topics_count = count($request->topics);
-        // $topics = collect($request->topics);
+    // CREAR EXAMEN
+    public function create(){
+        return view('exams.create');
+    }
 
-        if(auth()->user()->role->role == 'admin'){
-            $teacher_id = $request->teacher_id;
-            $school_id = $request->school_id;
-            $send = false;
-        } else {
+    // GUARDAR EXAMEN
+    public function store(Request $request){
+        $this->validate($request, $this->check_campos());
+
+        $start_date = $request->start_date;
+        $start_time = $request->start_time;
+        $end_time = $request->end_time;
+        $duration = (int)$request->duration;
+        
+        $inicio_examen = new Carbon($start_date.' '.$start_time);
+        $termino_examen = new Carbon($start_date.' '.$end_time);
+        
+        if($inicio_examen >= $termino_examen)
+            return response()->json(['message' => "La hora de termino tiene que ser menor que la hora de inicio."]);
+        if($inicio_examen->diffInMinutes($termino_examen) < $duration)
+            return response()->json(['message' => "La diferencia entre la hora de inicio y la hora de termino tiene que ser igual o mayor al tiempo de duración del examen."]);
+        
+        // if(auth()->user()->role->role == 'admin'){
+        //     $teacher_id = $request->teacher_id;
+        //     $school_id = $request->school_id;
+        //     $send = false;
+        // } else {
             $teacher_id = auth()->user()->teacher->id;
             $school_id  = auth()->user()->teacher->school_id;
             $send = true;
-        }
+        // }
         
         \DB::beginTransaction();
         try {
-            if($group_id == null){
-                $datos = [
-                    'teacher_id'    => $teacher_id,
-                    'school_id'     => $school_id, 
-                    'name'          => Str::of($request->name)->upper(),
-                    'indications'   => $indications,
-                    'error_range'   => $error_range,
-                    'send'          => $send
-                ];
-            } else {
-                $datos = [
-                    'teacher_id'    => $teacher_id,
-                    'school_id'     => $school_id, 
-                    'name'          => Str::of($request->name)->upper(),
-                    'indications'   => $indications,
-                    'error_range'   => $error_range,
-                    'send'          => $send,
-                    'group_id'      => $group_id,
-                    'start_date'    => $request->start_date, 
-                    'start_time'    => $request->start_time, 
-                    'end_time'      => $request->end_time, 
-                    'duration'      => $request->duration,
-                ];
-            }
-
-            $exam = Exam::create($datos);
+            $exam = Exam::create([
+                'teacher_id'    => $teacher_id,
+                'school_id'     => $school_id, 
+                'name'          => Str::of($request->name)->upper(),
+                'indications'   => $request->indications,
+                'error_range'   => (int)$request->error_range,
+                'send'          => $send,
+                'group_id'      => $request->group_id,
+                'start_date'    => $start_date, 
+                'start_time'    => $start_time, 
+                'end_time'      => $end_time, 
+                'duration'      => $duration,
+            ]);
 
             \DB::commit();
         }  catch (Exception $e) {
@@ -88,12 +89,60 @@ class ExamController extends Controller
         return response()->json($exam);
     }
 
+    public function check_campos(){
+        return [
+            'name' => ['required', 'string', 'min:5'],
+            'group_id' => ['required'],
+            'start_date' => ['required', 'date'],
+            'start_time' => ['required'],
+            'end_time' => ['required'],
+            'duration' => ['required', 'numeric', 'min:1', 'max:1439'],
+            'error_range' => ['required', 'numeric', 'min:0'],
+            'indications' => ['required', 'string', 'min:10']
+        ];
+    }
+
     // GUARDAR TEMAS
     public function save_topics(Request $request){
+        $exam = Exam::find($request->id);
         $categories = collect($request->categories);
         $topics = collect($request->topics);
-        $exam = Exam::find($request->id);
 
+        if($topics->count() == 0){
+            return response()->json(['message' => 'Elegir mínimo un tema por cada nivel.']);
+        } else {
+            $check_levels = $topics->unique('level_id')->pluck('level_id');
+            if($check_levels->count() < Level::count()){
+                $no_incluidos = Level::whereNotIn('id', $check_levels)->orderBy('level', 'asc')->pluck('level');
+                return response()->json(['message' => 'Elegir mínimo un tema de los niveles: '.$no_incluidos]);
+            }
+
+            $levels_skills = collect();
+            $levels = \DB::table('levels')->orderBy('level', 'asc')->get();
+            $levels->map(function($level) use(&$levels_skills, $topics, $categories){
+                $count = collect();
+                $topics->where('level_id', $level->id)->map(function($t) use(&$count, $categories){
+                    $skills = collect($t['skills']);
+                    $skills->map(function($s) use(&$count, $categories){
+                        if($categories->contains($s['id']) && $count->where('id', $s['id'])->count() == 0)
+                            $count->push(['id' => $s['id']]);
+                    });
+                });
+                
+                $levels_skills->push([
+                    'id' => $level->id, 
+                    'level' => $level->level,
+                    'skills' => $count->count()
+                ]);
+            });
+            
+            $check_levels = $levels_skills->where('skills', '<', count($categories));
+            if($check_levels->count() > 0){
+                $name_categories = Categorie::whereIn('id', $categories)->pluck('categorie');
+                return response()->json(['message' => 'Elegir '.$name_categories.' en los niveles: '.$check_levels->pluck('level')]);
+            }
+        }
+        
         \DB::beginTransaction();
         try {
             $categories->map(function($categorie) use(&$a, $exam){
@@ -180,16 +229,31 @@ class ExamController extends Controller
 
     // ACTUALIZAR EXAMEN
     public function update(Request $request){
+        $this->validate($request, $this->check_campos());
+
+        $start_date = $request->start_date;
+        $start_time = $request->start_time;
+        $end_time = $request->end_time;
+        $duration = (int)$request->duration;
+
+        $inicio_examen = new Carbon($start_date.' '.$start_time);
+        $termino_examen = new Carbon($start_date.' '.$end_time);
+        
+        if($inicio_examen >= $termino_examen)
+            return response()->json(['message' => "La hora de termino tiene que ser menor que la hora de inicio."]);
+        if($inicio_examen->diffInMinutes($termino_examen) < $duration)
+            return response()->json(['message' => "La diferencia entre la hora de inicio y la hora de termino tiene que ser igual o mayor al tiempo de duración del examen."]);
+        
         \DB::beginTransaction();
         try {
             $exam = Exam::find($request->id);
             $exam->update([
                 'group_id' => $request->group_id, 
                 'name' => Str::of($request->name)->upper(), 
-                'start_date' => $request->start_date, 
-                'start_time' => $request->start_time,
-                'end_time' => $request->end_time,
-                'duration' => (int)$request->duration, 
+                'start_date' => $start_date, 
+                'start_time' => $start_time,
+                'end_time' => $end_time,
+                'duration' => $duration, 
                 'error_range' => (int)$request->error_range,
                 'indications' => $request->indications
             ]);
@@ -208,31 +272,33 @@ class ExamController extends Controller
     // MOSTRAR DETALLES DEL EXAMEN
     public function show(Request $request){
         $exam = Exam::whereId($request->exam_id)
-                ->with(
-                    'group', 
-                    'teacher.user',
-                    'instructions.topic',
-                    'questions.answers',
-                    'topics'
-                )->first();
-        return response()->json($exam);
-    }
-
-    // REVISAR SI EL EXAMEN NO HA SIDO CREADO
-    public function enter_exam(Request $request){
-        $exam = Exam::find($request->exam_id);
-        $status = $exam->students()->where('student_id', auth()->user()->student->id)->count();
-        return response()->json($status);
+                ->with('group', 'teacher.user')
+                ->withCount('topics')->withCount('questions')
+                ->first();
+        $datos = $this->get_instQuestions($exam, \DB::table('levels')->pluck('id'));
+        return response()->json($datos);
     }
 
     // CREAR EXAMEN PARA STUDIANTE Y OBTENER EL NIVEL 1 DEL EXAMEN
-    public function start_exam(Request $request){
-        $exam = Exam::find($request->id);
-        $datos = $this->get_instQuestions($exam, 1);
+    public function start_exam($exam_id){
+        $exam = Exam::find($exam_id);
+
+        if($exam->students()->where('student_id', auth()->user()->student->id)->count() > 0){
+            $student = Student::find(auth()->user()->student->id);
+            $exam = $student->exams()
+                            ->where('exam_student.exam_id', $exam_id)
+                            ->first();
+            return view('users.student.results', compact('exam', 'student'));
+        }
+
+        $fecha_actual = Carbon::now();
+        // $termino_examen = new Carbon($exam->start_date.' '.$exam->end_time);
+        // if($fecha_actual->diffInSeconds($termino_examen, false) < 0){
+           
+        // }
 
         \DB::beginTransaction();
         try {
-            $fecha_actual = Carbon::now();
             $exam->students()->attach(auth()->user()->student->id,[
                 'level_id'      => 1,
                 'start_time'    => $fecha_actual->format('h:i:s'),
@@ -241,12 +307,13 @@ class ExamController extends Controller
 
             $skills = $this->array_ces($exam->id);
             $c_e_s = \DB::table('categorie_exam_student')->insert($skills);
+
+            $datos = $this->get_instQuestions($exam, [1]);
         \DB::commit();
         }  catch (Exception $e) {
             \DB::rollBack();
         }
-
-        return response()->json($datos);
+        return view('users.student.resolve-exam', compact('datos'));
     }
 
     public function array_ces($exam_id){
@@ -268,36 +335,57 @@ class ExamController extends Controller
     }
 
     // OBTENER INSTRUCCIONES
-    public function get_instQuestions($exam, $level){
+    public function get_instQuestions($exam, $levels){
         $ids_is = \DB::table('exam_instruction')
                             ->select('instruction_id')
                             ->where('exam_id', $exam->id)
-                            ->where('level_id', $level)
-                            ->pluck('instruction_id');
-        $instructions = Instruction::whereIn('id', $ids_is)->get();
+                            ->whereIn('level_id', $levels)
+                            ->orderBy('level_id', 'asc')
+                            ->get();
         $ids_qs = \DB::table('exam_question')
-                            ->whereIn('instruction_id', $ids_is)
+                            ->whereIn('instruction_id', $ids_is->pluck('instruction_id'))
                             ->select('question_id')
                             ->where('exam_id', $exam->id)
                             ->pluck('question_id');
         
-        $questions = Question::whereIn('id', $ids_qs)
-                        ->with('answers')->get();
-        $datos = [
-            'instructions' => $instructions,
-            'questions' => $questions,
-        ];
-        return $datos;
+        $instructions = collect();
+        $ids_is->map(function($is) use(&$instructions, &$ids_qs){
+            $instruction = Instruction::find($is->instruction_id);
+            $questions = Question::where('instruction_id', $instruction->id)
+                            ->whereIn('id', $ids_qs)
+                            ->with('answers')->get();
+            $topic = $instruction->topic;
+            $instructions->push([
+                'id' => $instruction->id,
+                'level' => $topic->level,
+                'topic' => $topic,
+                'topic_id' => $instruction->topic_id, 
+                'instruction' => $instruction->instruction, 
+                'categorie_id' => $instruction->categorie_id, 
+                'link' => $instruction->link,
+                'questions' => $questions
+            ]);
+        });
+        
+        return collect([
+            'exam' => $exam,
+            'instructions' => $instructions
+        ]);
     }
 
     // REVISAR PREGUNTAS DEL NIVEL
     public function check_level(Request $request){
         $exam = Exam::find($request->exam_id);
-        
+        // $datos = $this->get_instQuestions($exam, 2);
+        // return response()->json([
+        //     'status' => 1,
+        //     'datos' => $datos
+        // ]);
         $n = $this->save_results($exam, $request);
         $level_id = $n['level_id'];
         $number_questions = $n['number_questions'];
         $number_correct = $n['number_correct'];
+        $number_speak = $n['number_speak'];
 
         // 1 => Continuar, 2 => Finalizado
         $respuesta = [
@@ -305,131 +393,122 @@ class ExamController extends Controller
             'datos' => null
         ];
 
+        $this->insert_pivot_es($exam, $level_id, (($number_correct + $number_speak) < ($number_questions - $exam->error_range)));
         
-        if(($number_correct == $number_questions) || ($number_correct >= ($number_questions - $exam->error_range))){
+        if(($number_correct + $number_speak) >= ($number_questions - $exam->error_range)){
             $number_levels = \DB::table('exam_instruction')->where('exam_id', $exam->id)->max('level_id');
             $number_level = $level_id + 1;
             if($number_level <= $number_levels){
-                $datos = $this->get_instQuestions($exam, $number_level);
-                $respuesta = [
+                $datos = $this->get_instQuestions($exam, [$number_level]);
+                return response()->json([
                     'status' => 1,
                     'datos' => $datos
-                ];
+                ]);
             }
         }
 
         // FINALIZAR EXAMEN
-        if($respuesta['status'] == 2){
-            if($level_id > 1 && $number_correct < ($number_questions - $exam->error_range))
-                $level_id = $level_id - 1;
-            $this->insert_pivot_es($exam, $level_id);
+        $advances = Advance::where([
+            'student_id' => auth()->user()->student->id, 
+            'exam_id' => $exam->id
+        ])->get();
 
-            $advances = Advance::where([
-                'student_id' => auth()->user()->student->id, 
-                'exam_id' => $exam->id
-            ])->get();
-
-            $respuesta = [
-                'status' => 2,
-                'datos' => $advances
-            ];
-        }
-
-        return response()->json($respuesta);
+        return response()->json([
+            'status' => 2,
+            'datos' => $advances
+        ]);
     }
 
     // REVISAR RESPUESTAS
     public function save_results($exam, $request){
         \DB::beginTransaction();
         try {
+            $instructions = collect($request->instructions);
             $level_id = null;
             $number_questions = 0;
             $number_correct = 0;
-
-            $_instructions = collect($request->instructions);
-            $ids = array();
-            $_instructions->map(function ($instruction) use(&$ids){
-                array_push($ids, $instruction['id']);
-            });
-
-            $instructions = Instruction::whereIn('id', $ids)
-                                ->where('categorie_id', '!=', 3)->get();
-            
-            $list_advance = [];
-            $instructions->map(function ($instruction) use(&$list_advance, $exam, &$level_id){
+            $number_speak = 0;
+            $instructions->map(function ($is) use($exam, &$level_id, &$number_questions, &$number_correct, &$number_speak){
                 $hora_actual = Carbon::now();
+                $instruction = Instruction::find($is['id']);
                 $level_id = $instruction->topic->level_id;
+                $student_id = auth()->user()->student->id;
+                $instruction_id = $instruction->id;
+                $exam_id = $exam->id;
 
-                $list_advance[] = [
-                    'student_id' => auth()->user()->student->id, 
-                    'exam_id' => $exam->id, 
+                $advance = Advance::where([
+                    'student_id' => $student_id, 
+                    'exam_id' => $exam_id, 
                     'level_id' => $level_id, 
-                    'instruction_id' => $instruction->id, 
-                    'created_at' => $hora_actual,
-                    'updated_at' => $hora_actual
-                ];
-            });
-            
-            Advance::insert($list_advance);
-
-            $questions = collect($request->questions);
-            $list_results = [];
-            $questions->map(function ($question) use(&$list_results, $exam, &$number_correct) {
-                $write = $question['answer'];
-                $value = 'incorrect';
-                $points = 0;
-
-                $answer = Answer::where([
-                    'question_id' => $question['id'],
-                    'answer' => $write
+                    'instruction_id' => $instruction_id
                 ])->first();
 
-                if($answer != null) {
-                    // ABIERTA
-                    if($question['type_id'] == 1){
-                        $value = 'correct';
-                        $points = 1;
-                        $number_correct++;
-                    }
-                    // SELECT
-                    if($question['type_id'] == 2 || $question['type_id'] == 3){
-                        if($answer->value == 'correct') {
+                if($advance == null){
+                    $advance = Advance::create([
+                        'student_id' => $student_id, 
+                        'exam_id' => $exam_id, 
+                        'level_id' => $level_id, 
+                        'instruction_id' => $instruction_id, 
+                        'created_at' => $hora_actual,
+                        'updated_at' => $hora_actual
+                    ]);
+                }
+
+                $questions = collect($is['questions']);
+                $questions->map(function ($question) use($exam, &$number_questions, &$number_correct, $advance, &$number_speak, $instruction) {
+                    $write = $question['answer'];
+                    $value = 'incorrect';
+                    $points = 0;
+
+                    $answer = Answer::where([
+                        'question_id' => $question['id'],
+                        'answer' => $write
+                    ])->first();
+                    
+                    if($answer != null) {
+                        // ABIERTA
+                        if($question['type_id'] == 1){
                             $value = 'correct';
                             $points = 1;
                             $number_correct++;
                         }
+                        // SELECT
+                        if($question['type_id'] == 2 || $question['type_id'] == 3){
+                            if($answer->value == 'correct') {
+                                $value = 'correct';
+                                $points = 1;
+                                $number_correct++;
+                            }
+                        }
                     }
-                }
 
-                $advance = Advance::where([
-                    'instruction_id' => $question['instruction_id'],
-                    'student_id' => auth()->user()->student->id,
-                    'exam_id' => $exam->id
-                ])->first();
+                    $result = Result::where([
+                        'advance_id' => $advance->id, 
+                        'question_id' => $question['id'],
+                    ])->first();
+                    
+                    if($result == null){
+                        Result::create([
+                            'advance_id' => $advance->id,
+                            'question_id' => $question['id'], 
+                            'answer' => $write, 
+                            'value' => $value,
+                            'points' => $points
+                        ]);
+                    }
+                    if($instruction->categorie_id == 3)
+                        $number_speak++;
 
-                $result = Result::where([
-                    'advance_id' => $advance->id, 
-                    'question_id' => $question['id'],
-                ])->first();
-
-                if($result == null){
-                    $list_results[] = [
-                        'advance_id' => $advance->id,
-                        'question_id' => $question['id'], 
-                        'answer' => $write, 
-                        'value' => $value,
-                        'points' => $points
-                    ];
-                }
+                    $number_questions++;
+                });
             });
-
-            Result::insert($list_results);
-
+            
             $advances = Advance::where([
                     'student_id' => auth()->user()->student->id,
                     'exam_id' => $exam->id,
                     'level_id' => $level_id
                 ])->with('results')->get();
+            
             $advances->map(function($advance){
                 $total = 0;
                 $correct = 0;
@@ -449,8 +528,9 @@ class ExamController extends Controller
         
         return [
             'level_id' => $level_id,
-            'number_questions' => $questions->count(),
-            'number_correct' => $number_correct
+            'number_questions' => $number_questions,
+            'number_correct' => $number_correct,
+            'number_speak' => $number_speak
         ];
     }
 
@@ -476,11 +556,9 @@ class ExamController extends Controller
         $level_id = $n['level_id'];
         $number_questions = $n['number_questions'];
         $number_correct = $n['number_correct'];
+        $number_speak = $n['number_speak'];
 
-        if($level_id > 1 && $number_correct < ($number_questions - $exam->error_range))
-            $level_id = $level_id - 1;
-
-        $this->insert_pivot_es($exam, $level_id);
+        $this->insert_pivot_es($exam, $level_id, ($number_correct + $number_speak) < ($number_questions - $exam->error_range));
 
         $advances = Advance::where([
             'student_id' => auth()->user()->student->id, 
@@ -494,7 +572,8 @@ class ExamController extends Controller
         $advances = Advance::where([
             'student_id' => $request->student_id, 
             'exam_id' => $request->exam_id
-        ])->with('level', 'instruction.topic', 'results.question', 'results.track')->get();
+        ])->with('level', 'instruction.topic', 'results.question', 'results.track')
+        ->orderBy('level_id', 'asc')->get();
 
         $student = Student::find($request->student_id);
         $exam = $student->exams()
@@ -569,7 +648,10 @@ class ExamController extends Controller
         return response()->json($exams);
     }
 
-    public function insert_pivot_es($exam, $level_id){
+    public function insert_pivot_es($exam, $level_id, $condition){
+        if($level_id > 1 && $condition)
+            $level_id = $level_id - 1;
+
         $relation = $exam->students()
                         ->where('exam_student.student_id', auth()->user()->student->id)
                         ->first();
@@ -597,33 +679,40 @@ class ExamController extends Controller
     // REVISAR SKILLS
     public function check_skills(Request $request){
         $questions = collect($request->questions);
+        if($questions->count() == 0){
+            return response()->json(['message' => 'Elegir mínimo una pregunta por cada tema.']);
+        } else {
+            $check_topics = $questions->unique('topic_id')->pluck('topic_id');
+            $exam = Exam::find($request->exam_id);
+            if($check_topics->count() < $exam->topics->count()){
+                $no_incluidos = $exam->topics->whereNotIn('id', $check_topics)->pluck('topic');
+                return response()->json(['message' => 'Elegir mínimo una pregunta de los temas: '.$no_incluidos]);
+            }
 
-        $levels = \DB::table('levels')->get();
-        $inst_skills = collect();
-        foreach ($levels as $level) {
-            $dato = [ 'level_id' => $level->id, 'instructions' => collect() ];
-            $inst_skills->push($dato);
-        }
-        
-        foreach ($questions as $instruction) {
-            $i = $inst_skills->firstWhere('level_id', $instruction['level_id']);
-            if(!$i['instructions']->contains('categorie_id', $instruction['categorie_id']))
-                $i['instructions']->push(['categorie_id' => $instruction['categorie_id']]);
-        }
+            $categories = \DB::table('categorie_exam')
+                ->join('categories', 'categorie_exam.categorie_id', '=', 'categories.id')
+                ->select('categorie_id', 'exam_id', 'categories.categorie as categorie')
+                ->where([ 'exam_id' => $request->exam_id ])
+                ->get();
 
-        $categories = \DB::table('categorie_exam')->where([
-            'exam_id' => $request->exam_id
-        ])->get();
+            $levels_skills = collect();
+            $levels = \DB::table('levels')->orderBy('level', 'asc')->get();
+            $levels->map(function($level) use(&$levels_skills, $questions, $categories){
+                $skills = collect();
+                $questions->where('level_id', $level->id)->map(function($question) use(&$skills, $categories){
+                    if($categories->where('categorie_id', $question['categorie_id'])->count() > 0 && !$skills->contains('categorie_id', $question['categorie_id']))
+                        $skills->push(['categorie_id' => $question['categorie_id']]);
+                });
+                $levels_skills->push([
+                    'level_id' => $level->id, 
+                    'level' => $level->level,
+                    'skills' => $skills->count() 
+                ]);
+            });
 
-        foreach ($inst_skills as $cs) {
-            $c = $cs['instructions'];
-            if($c->count() == $categories->count()){
-                foreach ($categories as $categorie) {
-                    if(!$c->contains('categorie_id', $categorie->categorie_id)) 
-                        return response()->json(false);
-                }
-            } else {
-                return response()->json(false);
+            $check_levels = $levels_skills->where('skills', '<', $categories->count());
+            if($check_levels->count() > 0){
+                return response()->json(['message' => 'Elegir '.$categories->pluck('categorie').' en los niveles: '.$check_levels->pluck('level')]);
             }
         }
         
@@ -665,8 +754,46 @@ class ExamController extends Controller
     // OBTENER TEMAS DEL EXAMEN
     public function get_topics(Request $request){
         $exam = Exam::whereId($request->exam_id)
-                ->with('topics.level', 'topics.instructions.questions', 'topics.instructions.categorie')->first();
-        return response()->json($exam);
+                    ->with('topics.level', 'topics.instructions.questions', 'topics.instructions.categorie')->first();
+        $topics = collect();
+        $exam->topics->map(function($topic) use (&$topics){
+            $instructions = collect();
+            $topic->instructions->map(function($instruction) use(&$instructions){
+                $questions = collect();
+                $instruction->questions->map(function($question) use(&$questions){
+                    $questions->push([
+                        'id' => $question->id,
+                        'level_id' => $question->instruction->topic->level_id,
+                        'topic_id' => $question->instruction->topic_id,
+                        'categorie_id' => $question->instruction->categorie_id,
+                        'instruction_id' => $question->instruction_id, 
+                        'type_id' => $question->type_id, 
+                        'question' => $question->question, 
+                        'answer' => $question->answer,
+                        'state' => false, 
+                        'variant' => 'secondary'
+                    ]);
+                });
+
+                $instructions->push([
+                    'id' => $instruction->id,
+                    'topic_id' => $instruction->topic_id, 
+                    'instruction' => $instruction->instruction, 
+                    'categorie_id' => $instruction->categorie_id, 
+                    'link' => $instruction->link,
+                    'categorie' => $instruction->categorie,
+                    'questions' => $questions
+                ]);
+            });
+            $topics->push([
+                'id' => $topic->id,
+                'level_id' => $topic->level_id, 
+                'topic' => $topic->topic,
+                'level' => $topic->level,
+                'instructions' => $instructions
+            ]);
+        });
+        return response()->json($topics);
     }
 
     // NOTIFICACIÓN DE EXAMEN A CADA ALUMNO
@@ -749,11 +876,11 @@ class ExamController extends Controller
             $name_file = "id-".$user->id."_".$name_student."_".time().".wav";
 
             Storage::disk('dropbox')->putFileAs(
-                '/', $input, $name_file
+                '/ptestaudios', $input, $name_file
             );
 
             $response = $this->dropbox->createSharedLinkWithSettings(
-                '/'.$name_file, 
+                '/ptestaudios/'.$name_file, 
                 ["requested_visibility" => "public"]
             );
 
@@ -842,4 +969,29 @@ class ExamController extends Controller
         return false;
     }
     
+    // BORRAR EL EXAMEN REALIZADO POR EL ESTUDIANTE
+    public function student_delete(Request $request){
+        \DB::beginTransaction();
+        try {
+            $user = User::find($request->user_id);
+            $exam_id = $request->exam_id;
+            $busqueda = ['student_id' => $user->student->id, 'exam_id' => $exam_id];
+
+            // TODO POR ELIMINAR - EXAM_STUDENT, CATEGORIE_EXAM_STUDENT, ADVANCE, RESULTS, TRACK
+            $advances = Advance::where($busqueda)->get();
+            $results = Result::whereIn('advance_id', $advances->pluck('id'))->get();
+           
+            Track::whereIn('result_id', $results->pluck('id'))->delete();
+            Result::whereIn('advance_id', $advances->pluck('id'))->delete();
+            Advance::where($busqueda)->delete();
+            $categorie_exam_student = \DB::table('categorie_exam_student')
+                    ->where($busqueda)->delete();
+            $exam_student = \DB::table('exam_student')->where($busqueda)->delete();
+            \DB::commit();
+        }  catch (Exception $e) {
+            \DB::rollBack();
+        }
+        
+        return response()->json(true);
+    }
 }

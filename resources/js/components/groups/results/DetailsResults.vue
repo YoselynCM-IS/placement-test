@@ -24,7 +24,7 @@
                     <b-col :class="set_class(level)">{{ level.correct }}</b-col>
                     <b-col :class="set_class(level)">{{ level.total }}</b-col>
                     <b-col :class="set_class(level)">
-                        {{ ((level.correct / level.total) * 100).toFixed(0) }}
+                        {{ (level.correct / level.total) | get_cal }}
                     </b-col>
                 </b-row>
             </b-card>
@@ -41,7 +41,7 @@
                     <b-col><b>{{ skill.categorie }}</b></b-col>
                     <b-col>{{ set_calificacion(skill.categorie, skill.points) }}</b-col>
                     <b-col>{{ set_calificacion(skill.categorie, skill.total) }}</b-col>
-                    <b-col>{{ skill | get_cal }}</b-col>
+                    <b-col>{{ (skill.points / skill.total) | get_cal }}</b-col>
                 </b-row>
             </b-card>
         </div>
@@ -74,11 +74,8 @@ export default {
     methods: {
         get_results(){
             this.loaded = true;
-            // console.log(this.student_id);
             axios.get('/exams/get_results', {params: {exam_id: this.exam.id, student_id: this.student_id}}).then(response => {
-                
                 this.levels = response.data;
-                // console.log(response.data);
                 this.loaded = false;
             });
         },

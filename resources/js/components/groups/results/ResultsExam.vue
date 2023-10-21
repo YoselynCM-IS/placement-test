@@ -7,32 +7,7 @@
                     @click="get_results_modal()">
                     Resultados
                 </b-button>
-                <b-list-group>
-                    <b-list-group-item>
-                        <label><strong>Fecha:</strong></label>
-                        <p>{{ exam.pivot.created_at | moment('DD-MM-YYYY') }}</p>
-                    </b-list-group-item>
-                    <b-list-group-item>
-                        <label><strong>Hora de inicio:</strong></label>
-                        <p>{{ exam.pivot.start_time }}</p>
-                    </b-list-group-item>
-                    <b-list-group-item>
-                        <label><strong>Hora de termino:</strong></label>
-                        <p>{{ exam.pivot.end_time }}</p>
-                    </b-list-group-item>
-                    <b-list-group-item>
-                        <label><strong>Duración:</strong></label>
-                        <p>{{ exam.pivot.duration }} minutos</p>
-                    </b-list-group-item>
-                    <b-list-group-item>
-                        <label><strong>Profesor:</strong></label>
-                        <p>{{ exam.teacher.user.name }}</p>
-                    </b-list-group-item>
-                    <b-list-group-item>
-                        <label><strong>Grupo:</strong></label>
-                        <p>{{ exam.group.group }}</p>
-                    </b-list-group-item>
-                </b-list-group>
+                <information-exam :exam="exam" :show="true"></information-exam>
             </b-col>
             <b-col>
                 <b-card v-for="(advance, i) in advances" v-bind:key="i">
@@ -122,7 +97,9 @@
 </template>
 
 <script>
+import InformationExam from '../../exam/InformationExam.vue';
 export default {
+  components: { InformationExam },
     props: ['advances', 'exam', 'role_id', 'student_id'],
     data(){
         return{

@@ -1,8 +1,6 @@
 <template>
     <div>
-        <p>
-            Tiempo para resolver el examen: <strong class="timer">{{ time | prettify }}</strong>
-        </p>
+        <strong class="timer">{{ time | prettify }} minutes</strong>
     </div>
 </template>
 

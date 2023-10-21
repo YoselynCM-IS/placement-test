@@ -26,9 +26,10 @@ class AdministratorController extends Controller
 
     // TEACHERS
     public function teachers(){
-        $s = School::withCount('teachers')->orderBy('school', 'asc')->get();
-        $schools = $s->where('teachers_count', '>', 0);
-        return view('users.administrator.teachers', compact('schools'));
+        // $s = School::withCount('teachers')->orderBy('school', 'asc')->get();
+        // $schools = $s->where('teachers_count', '>', 0);
+        // , compact('schools')
+        return view('users.administrator.teachers');
     }
 
     // GUARDAR TEACHER

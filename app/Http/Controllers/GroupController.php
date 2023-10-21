@@ -169,7 +169,7 @@ class GroupController extends Controller
     // REVISAR SI EL ESTUDIANTE TIENE EXAMENES ASIGNADOS
     public function student_assignments(Request $request){
         $student = Student::where('user_id', $request->user_id)
-                    ->withCount('exams')->first();
+                    ->with('exams')->first();
         return response()->json($student);
     }
 

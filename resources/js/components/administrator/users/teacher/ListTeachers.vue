@@ -24,7 +24,7 @@
             </b-col>
         </b-row>
         <b-card no-body class="mt-2">
-            <b-tabs pills card vertical nav-wrapper-class="w-25">
+            <!-- <b-tabs pills card vertical nav-wrapper-class="w-25">
                 <b-tab title="Inicio">
                 </b-tab>
                 <b-tab v-for="(school, i) in withTeachers" v-bind:key="i" :title="school.school">
@@ -40,7 +40,7 @@
                                 </b-button>
                             </b-col>
                         </b-row>
-                    </template>
+                    </template> -->
                     <!-- VER LISTA DE PROFESORES -->
                     <div v-if="!viewGroups">
                         <pagination size="default" :limit="1" :data="teachersData" 
@@ -52,8 +52,8 @@
                                 <b-icon-chevron-right></b-icon-chevron-right>
                             </span>
                         </pagination>
-                        <b-table :items="teachersData.data" :fields="fieldsTeachers" responsive
-                            :busy="load">
+                        <b-table v-if="teachersData.data" responsive :busy="load"
+                            :items="teachersData.data" :fields="fieldsTeachers">
                             <template v-slot:cell(index)="data">
                                 {{ data.index + 1 }}
                             </template>
@@ -93,6 +93,9 @@
                                 </div>
                             </template>
                         </b-table>
+                        <b-alert v-else show variant="secondary">
+                            Buscar escuela para visualizar lista de profesores.
+                        </b-alert>
                     </div>
                     <div v-else>
                         <b-row class="mb-2">
@@ -103,10 +106,10 @@
                                 </b-button>
                             </b-col>
                         </b-row>
-                        <list-groups :user="user"></list-groups>
+                        <list-groups :user="user" :role_id="role_id"></list-groups>
                     </div>
-                </b-tab>
-            </b-tabs>
+                <!-- </b-tab>
+            </b-tabs> -->
         </b-card>
 
         <!-- MODALS -->
@@ -131,11 +134,11 @@
 <script>
 import searchSchool from '../../../../mixins/searchSchool';
 export default {
-    props: ['registers'],
+    props: ['role_id'],
     mixins: [searchSchool],
     data(){
         return {
-            withTeachers: this.registers,
+            withTeachers: [],
             fieldsTeachers: [
                 { key: 'index', label: 'N.' },
                 { key: 'name', label: 'Nombre' },
@@ -160,7 +163,7 @@ export default {
     methods: {
         select_school(school){
             this.school_id = school.id;
-            this.sSchool = school.name;
+            this.sSchool = school.school;
             this.withTeachers = [];
             this.withTeachers.push(school);
             this.schools = [];

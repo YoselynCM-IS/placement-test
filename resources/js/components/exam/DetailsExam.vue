@@ -3,40 +3,7 @@
         <b-row>
             <!-- DETALLES DEL EXAMEN -->
             <b-col sm="4">
-                <b-list-group>
-                    <b-list-group-item>
-                        <label><strong>Nombre del examen:</strong></label>
-                        <p>{{ exam.name }}</p>
-                    </b-list-group-item>
-                    <b-list-group-item>
-                        <label><strong>Profesor:</strong></label>
-                        <p>{{ exam.teacher.user.name }}</p>
-                    </b-list-group-item>
-                    <b-list-group-item>
-                        <label><strong>Grupo: </strong></label>
-                        <p>{{ exam.group ? exam.group.group:'No definido' }}</p>
-                    </b-list-group-item>
-                    <b-list-group-item>
-                        <label><strong>Fecha de aplicación: </strong></label>
-                        <p>{{ exam.start_date ? exam.start_date:'No definido' }}</p>
-                    </b-list-group-item>
-                    <b-list-group-item>
-                        <label><strong>Hora de inicio: </strong></label>
-                        <p>{{ exam.start_time ? exam.start_time:'No definido' }}</p>
-                    </b-list-group-item>
-                    <b-list-group-item>
-                        <label><strong>Hora de termino: </strong></label>
-                        <p>{{ exam.end_time ? exam.end_time:'No definido' }}</p>
-                    </b-list-group-item>
-                    <b-list-group-item>
-                        <label><strong>Duración: </strong></label>
-                        <p>{{ exam.duration }} minutos</p>
-                    </b-list-group-item>
-                    <b-list-group-item>
-                        <label><strong>Indicaciones: </strong></label>
-                        <p v-html="exam.indications ? exam.indications:'No definido'"></p>
-                    </b-list-group-item>
-                </b-list-group>
+                <information-exam :exam="exam.exam" :show="true"></information-exam>
             </b-col>
             <!-- PREGUNTAS DEL EXAMEN -->
             <b-col>
@@ -47,7 +14,8 @@
                         <template #header>
                             <b-row>
                                 <b-col sm="3">
-                                    <i>{{ filter_level(instruction.pivot.level_id) }}</i>
+                                    <i>{{ instruction.level.level }}</i>
+                                    <!-- <i>{{ filter_level(instruction.pivot.level_id) }}</i> -->
                                 </b-col>
                                 <b-col>
                                     <b>{{ instruction.topic.topic }}</b>
@@ -57,9 +25,9 @@
                         <p v-html="instruction.instruction"></p>
                         <track-component v-if="instruction.categorie_id == 2"
                             :link="instruction.link" :text="'Track'"></track-component>
-                        <div v-for="(question, j) in exam.questions" v-bind:key="j"
+                        <div v-for="(question, j) in instruction.questions" v-bind:key="j"
                                 class="mb-1">
-                            <div v-if="question.instruction_id == instruction.id">
+                            <!-- <div v-if="question.instruction_id == instruction.id"> -->
                                 <div v-if="instruction.categorie_id !== 3">
                                     <q-open-component v-if="question.type_id == 1"
                                         :question="question">
@@ -83,7 +51,7 @@
                                         </b-col>
                                     </b-row>
                                 </div>
-                            </div>
+                            <!-- </div> -->
                         </div>
                     </b-card>
                 </b-card>
@@ -93,10 +61,12 @@
 </template>
 
 <script>
-import filterLevel from '../../mixins/filterLevel';
+// import filterLevel from '../../mixins/filterLevel';
+import InformationExam from './InformationExam.vue';
 export default {
+    components: { InformationExam },
     props: ['exam'],
-    mixins: [filterLevel],
+    // mixins: [filterLevel],
     data(){
         return {
             // answers: []

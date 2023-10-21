@@ -71,7 +71,7 @@
 <script>
 import setCategories from '../../mixins/setCategories';
 export default {
-    props: ['exam', 'topics', 'edit'],
+    props: ['exam', 'edit'],
     mixins: [setCategories],
     data(){
         return {
@@ -101,9 +101,10 @@ export default {
     },
     methods: {
         // ELEGIR TEMAS
-        choose_topics(){
+        choose_topics() {
             this.busy = true;
-            axios.get('/levels/home').then(response => {
+            let form = { categories: this.exam.categories };
+            axios.put('/instructions/by_categories', form).then(response => {
                 this.levels = response.data;
                 this.chooseTopics = true;
                 this.busy = false;
@@ -117,17 +118,20 @@ export default {
         },
         // GUARDAR TOPICS
         save_topics(){
-            if(this.chooseTopics && this.check_level()){
+            // if(this.chooseTopics && this.check_level()){
                 this.load = true;
-                if(!this.edit){
+                // if(!this.edit){
                     axios.post('/exams/save_topics', this.exam).then(response => {
                         this.load = false;
-                        this.$emit('topics_saved', response.data);
+                        if (response.data.message)
+                            swal("Importante", response.data.message, "warning");
+                        else
+                            this.$emit('topics_saved', response.data);
                     }).catch(error => {
                         this.load = false;
                         swal("Error", "Ocurrió un error al crear el exámen. Revisa tu conexión a internet y vuelve a intentarlo.", "warning");
                     });
-                } else {
+                // } else {
                     // let form_exam = { id: this.exam.id, topics: this.exam.topics };
                     // axios.put('/exams/update_topics', form_exam).then(response => {
                     //     this.load = false;
@@ -137,11 +141,11 @@ export default {
                     //     this.load = false;
                     //     swal("Error", "Ocurrió un error al crear el exámen. Revisa tu conexión a internet y vuelve a intentarlo.", "warning");
                     // });
-                }
-            } else {
-                this.errorLevels = true;
-                this.dismissCountDown = this.dismissSecs;
-            }
+                // }
+            // } else {
+            //     this.errorLevels = true;
+            //     this.dismissCountDown = this.dismissSecs;
+            // }
         },
         // VERIFICAR EL NIVEL DE CADA TEMA SELECCIONADO
         check_level(){

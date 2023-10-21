@@ -9,13 +9,8 @@ class LevelController extends Controller
 {
     // PAGINA PRINCIPAL, OBTENER TODOS LOS NIVELES
     public function home(){
-        if(request()->ajax()){
-            $levels = Level::orderBy('level', 'asc')->with('topics.instructions.categorie')->get();
-            return response()->json($levels);
-        } else {
-            $levels = Level::orderBy('level', 'asc')->get();
-            return view('reagents.home', compact('levels'));
-        }
+        $levels = Level::orderBy('level', 'asc')->get();
+        return view('reagents.home', compact('levels'));
     }
 
     // OBTENER TODOS LOS NIVELES

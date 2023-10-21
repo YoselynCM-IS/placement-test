@@ -39,6 +39,10 @@
                         @click="delete_student(data.item.user)">
                         <b-icon-x></b-icon-x>
                     </b-button>
+                    <b-button v-if="role_id == 1" pill variant="dark" size="sm"
+                        @click="delete_exam(data.item.user)">
+                        <b-icon-arrow-repeat></b-icon-arrow-repeat>
+                    </b-button>
                 </template>
                 <template v-slot:cell(send)="data">
                     <i>{{ !data.item.user.send ? 'No enviado':'Enviado' }}</i>
@@ -86,12 +90,26 @@
                 <b-icon-x-circle></b-icon-x-circle> Eliminar alumno
             </b-button>
         </b-modal>
+        <!-- ELIMINAR EXAMEN CONTESTADO DEL ALUMNO -->
+        <b-modal ref="modal-delete_exam" hide-footer centered 
+                class="text-center" title="Reiniciar examen">
+            <b-table :items="userExams.exams" :fields="fieldsExams">
+                <template v-slot:cell(index)="data">
+                    {{ data.index + 1 }}
+                </template>
+                <template v-slot:cell(actions)="data">
+                    <b-button variant="dark" pill @click="confirmDelExam(data.item)">
+                        <b-icon-arrow-repeat></b-icon-arrow-repeat>
+                    </b-button>
+                </template>
+            </b-table>
+        </b-modal>
     </div>
 </template>
 
 <script>
 export default {
-    props: ['group'],
+    props: ['group', 'role_id'],
     data(){
         return {
             fieldsStudents: [
@@ -114,7 +132,13 @@ export default {
             actual_page: 1,
             form: {},
             openEditS: false,
-            user_id: null
+            user_id: null,
+            userExams: { user_id: null, exams: [] },
+            fieldsExams: [
+                { key: 'index', label: 'N.' },
+                { key: 'name', label: 'Examen' },
+                { key: 'actions', label: 'Eliminar' },
+            ]
         }
     },
     created: function(){
@@ -171,14 +195,13 @@ export default {
         // ELIMINAR ALUMNO
         delete_student(user){
             axios.get('/groups/student_assignments', {params: {user_id: user.id}}).then(response => {
-                if(response.data.exams_count == 0){
+                if(response.data.exams.length == 0){
                     this.user_id = user.id;
                     this.$refs['modal-delete_student'].show();
                 } else {
                     swal("", "El alumno no puede ser eliminado ya que tiene un examen asignado.", "warning");
                 }
-            }).catch(error => { 
-            });
+            }).catch(error => { });
         },
         // CONFIRMAR ELIMINACIÓN
         confirm_delete(){
@@ -187,6 +210,31 @@ export default {
                 this.$refs['modal-delete_student'].hide();
                 swal("OK", "El alumno ha sido eliminado correctamente.", "success");
                 this.http_student(this.actual_page);
+                this.load = false;
+            }).catch(error => {
+                // PENDIENTE
+                this.load = false;
+            });
+        },
+        delete_exam(user) {
+            this.userExams = { user_id: null, exams: [] };
+            axios.get('/groups/student_assignments', { params: { user_id: user.id } }).then(response => {
+                if (response.data.exams.length > 0) {
+                    this.userExams.user_id = user.id;
+                    this.userExams.exams = response.data.exams;
+                    this.$refs['modal-delete_exam'].show();
+                } else {
+                    swal("", "El alumno no tiene algún examen asignado.", "warning");
+                }
+            }).catch(error => { });
+        },
+        confirmDelExam(exam) {
+            this.load = true;
+            let reiniciar = { user_id: this.userExams.user_id, exam_id: exam.id };
+            axios.put('/exams/student_delete', reiniciar).then(response => {
+                this.userExams = { user_id: null, exams: [] };
+                this.$refs['modal-delete_exam'].hide();
+                swal("OK", "El examen se reinició correctamente.", "success");
                 this.load = false;
             }).catch(error => {
                 // PENDIENTE

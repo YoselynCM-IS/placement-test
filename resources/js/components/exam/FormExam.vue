@@ -5,11 +5,11 @@
                 <form-datos :exam="exam" :edit="true"
                     @exam_created="exam_created"></form-datos>
             </b-tab>
-            <b-tab v-if="step_2 && !step_3 && exam.topics_s.length == 0" title="Temas">
+            <b-tab v-if="step_2 && !step_3 && exam.topics_count == 0" title="Temas">
                 <form-topics :exam="exam" :edit="false" 
-                @topics_saved="topics_saved"></form-topics>
+                    @topics_saved="topics_saved"></form-topics>
             </b-tab>
-            <b-tab v-if="(exam.topics_s.length > 0 && exam.questions.length == 0) || step_3" 
+            <b-tab v-if="(exam.topics_count > 0 && exam.questions_count == 0) || step_3" 
                 title="Preguntas">
                 <form-questions :exam="exam" @questions_created="questions_created"></form-questions>
             </b-tab>

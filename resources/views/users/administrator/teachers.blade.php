@@ -1,5 +1,5 @@
 @extends('layouts.app')
 
 @section('content')
-    <list-teachers :registers="{{$schools}}"></list-teachers>
+    <list-teachers :role_id="{{auth()->user()->role_id}}"></list-teachers>
 @endsection

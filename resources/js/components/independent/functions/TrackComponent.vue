@@ -5,10 +5,9 @@
                 <strong>{{ text }}</strong>
             </b-col>
             <b-col>
-                <audio controls>
-                    <source :src="link" type="audio/mp3">
-                        Tu navegador no soporta audio HTML5.
-                </audio>
+                <audio id="audioIdE"></audio>
+                <b-button @click="playAudio()" pill size="sm" variant="dark"><b><b-icon-play></b-icon-play> Play</b></b-button>
+                <!-- <b-button @click="pauseAudio()" pill size="sm" variant="dark"><b-icon-pause></b-icon-pause></b-button> -->
             </b-col>
         </b-row>
     </div>
@@ -16,6 +15,19 @@
 
 <script>
 export default {
-    props: ['link', 'text']
+    props: ['link', 'text'],
+    methods: {
+        playAudio() {
+            var audio = document.getElementById('audioIdE');
+            audio.pause();
+            audio.currentTime = 0;
+            audio.src = this.link;
+            audio.play();
+        },
+        pauseAudio() {
+            var audio = document.getElementById('audioIdE');
+            audio.pause();
+        }
+    }
 }
 </script>

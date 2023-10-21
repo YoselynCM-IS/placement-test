@@ -79,6 +79,7 @@ Vue.component('student-home-component', require('./components/student/HomeCompon
 
 // EXAMS
 Vue.component('assigned-exams', require('./components/student/exam/AssignedExams.vue').default);
+Vue.component('check-exam', require('./components/student/exam/CheckExam.vue').default);
 Vue.component('solve-exam', require('./components/student/exam/SolveExam.vue').default);
 
 /** STUDENT */

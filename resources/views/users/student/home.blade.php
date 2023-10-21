@@ -1,5 +1,5 @@
 @extends('layouts.app')
 
 @section('content')
-    <assigned-exams :registers="{{$exams}}"></assigned-exams>
+    <assigned-exams :exams="{{$exams}}"></assigned-exams>
 @endsection

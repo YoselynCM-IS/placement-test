@@ -14,10 +14,11 @@
             </b-row>
         </b-card>
         <b-tabs v-else pills card vertical>
-            <b-tab v-for="(topic, i) in list_topics" v-bind:key="i"
+            <b-tab v-for="(topic, i) in examTopics" v-bind:key="i"
                  @click="position = i">
                 <template #title>
-                    {{topic.level}} <br> {{topic.topic}}
+                    {{ topic.topic }} <br>
+                    <strong><i>{{ topic.level.level }}</i></strong>
                 </template>
                 <b-card v-for="(instruction, j) in topic.instructions" v-bind:key="j"
                     bg-variant="light" :header-html="instruction.instruction">
@@ -35,11 +36,14 @@
                     </b-row>
                     <b-table :items="instruction.questions" :fields="fieldsQuestions"
                         responsive="sm">
-                        <template v-slot:cell(index)="data">
+                        <!-- <template v-slot:cell(index)="data">
                             {{ data.index + 1 }}
-                        </template>
+                        </template> -->
                         <template v-slot:cell(question)="data">
                             <p v-html="set_answer(data.item)"></p>
+                        </template>
+                        <template v-slot:cell(skill)="data">
+                            {{ instruction.categorie.categorie }}
                         </template>
                         <template v-slot:cell(selected)="data">
                             <b-button pill size="sm" :variant="data.item.variant"
@@ -102,49 +106,51 @@ export default {
             dismissCountDown: 0,
             errorQuestions: false,
             ts: [],
-            dismissMsg: ''
+            dismissMsg: '',
+            examTopics: []
         }
     },
     methods: {
         choose_questions(){
             this.load = true;
             axios.get('/exams/get_topics', {params: {exam_id: this.exam.id}}).then(response => {
-                this.ts = response.data.topics;
-                this.ts.forEach(topic => {
-                    var dato = { 
-                        level: topic.level.level,
-                        topic_id: topic.id, topic: topic.topic,
-                        instructions: []
-                    };
+                // this.ts = response.data.topics;
+                // this.ts.forEach(topic => {
+                //     var dato = { 
+                //         level: topic.level.level,
+                //         topic_id: topic.id, topic: topic.topic,
+                //         instructions: []
+                //     };
                     
-                    topic.instructions.forEach(instruction => {
-                        var dato2 = {
-                            id: instruction.id,
-                            instruction: instruction.instruction,
-                            categorie_id: instruction.categorie_id,
-                            link: instruction.link,
-                            questions: []
-                        };
+                //     topic.instructions.forEach(instruction => {
+                //         var dato2 = {
+                //             id: instruction.id,
+                //             instruction: instruction.instruction,
+                //             categorie_id: instruction.categorie_id,
+                //             link: instruction.link,
+                //             questions: []
+                //         };
                 
-                        instruction.questions.forEach(question => {
-                            let q = {
-                                id: question.id,
-                                topic_id: topic.id,
-                                instruction_id: question.instruction_id,
-                                level_id: topic.level_id,
-                                categorie_id: instruction.categorie_id,
-                                question: question.question,
-                                type_id: question.type_id,
-                                skill: instruction.categorie.categorie,
-                                state: false, variant: 'secondary'
-                            };
-                            dato2.questions.push(q);
-                        });
-                        dato.instructions.push(dato2);
-                    });
-                    this.list_topics.push(dato);
-                });
+                //         instruction.questions.forEach(question => {
+                //             let q = {
+                //                 id: question.id,
+                //                 topic_id: topic.id,
+                //                 instruction_id: question.instruction_id,
+                //                 level_id: topic.level_id,
+                //                 categorie_id: instruction.categorie_id,
+                //                 question: question.question,
+                //                 type_id: question.type_id,
+                //                 skill: instruction.categorie.categorie,
+                //                 state: false, variant: 'secondary'
+                //             };
+                //             dato2.questions.push(q);
+                //         });
+                //         dato.instructions.push(dato2);
+                //     });
+                //     this.list_topics.push(dato);
+                // });
                 this.chooseQuestions = true;
+                this.examTopics = response.data;
                 this.load = false;
             });
         },
@@ -159,30 +165,30 @@ export default {
             });
         },
         check_topics(){
-            let length_topics = this.ts.length;
-            var count = 0;
-            this.ts.forEach(t => {
-                let q = this.questions.find(q => q.topic_id == t.id);
-                if(q !== undefined) count++;
-            });
+            // let length_topics = this.ts.length;
+            // var count = 0;
+            // this.ts.forEach(t => {
+            //     let q = this.questions.find(q => q.topic_id == t.id);
+            //     if(q !== undefined) count++;
+            // });
             
-            if(count == length_topics){
+            // if(count == length_topics){
                 this.load = true;
                 this.form.questions = this.questions;
                 axios.post('/exams/check_skills', this.form).then(response => {
-                    if(!response.data){
-                        this.function_dismiss('Es necesario elegir mínimo una pregunta por skill.');
-                    } else {
+                    if (response.data.message)
+                        swal("Importante", response.data.message, "warning");
+                    else
                         this.save_questions();
-                    }
+                    
                     this.load = false;
                 }).catch(error => {
                     this.load = false;
                     swal("Error", "Ocurrió un error al crear los exámenes. Revisa tu conexión a internet y vuelve a intentarlo.", "warning");
                 });
-            } else {
-                this.function_dismiss('Es necesario elegir mínimo una pregunta por tema.');
-            }
+            // } else {
+            //     this.function_dismiss('Es necesario elegir mínimo una pregunta por tema.');
+            // }
         },
         function_dismiss(msg){
             this.dismissMsg = msg;

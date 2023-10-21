@@ -79,7 +79,7 @@
         </b-modal>
         <b-modal hide-footer title="Lista de alumnos" 
             v-model="openList" size="xl" scrollable>
-            <list-group-student :group="group"></list-group-student>
+            <list-group-student :group="group" :role_id="role_id"></list-group-student>
         </b-modal>
         <!-- CONFIRMAR ELIMINACIÓN -->
         <b-modal ref="modal-delete_group" hide-footer size="sm" centered 
@@ -94,7 +94,7 @@
 
 <script>
 export default {
-    props: ['user'],
+    props: ['user', 'role_id'],
     data(){
         return {
             groupsData: {},

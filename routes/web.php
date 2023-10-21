@@ -46,6 +46,7 @@ Route::name('teacher.')->prefix('teacher')
 Route::name('student.')->prefix('student')
 ->middleware(['auth', 'role:student'])->group(function () {
     Route::get('home', 'StudentController@home' )->name('home');
+    Route::get('exam/{exam_id}', 'StudentController@exam' )->name('exam');
     Route::get('results/{exam_id}', 'StudentController@results' )->name('results');
 });
 /** STUDENTS */
@@ -85,6 +86,7 @@ Route::name('instructions.')->prefix('instructions')->group(function () {
     Route::delete('delete', 'InstructionController@delete' )->name('delete');
     Route::put('move', 'InstructionController@move' )->name('move');
     Route::get('get_categories', 'InstructionController@get_categories' )->name('get_categories');
+    Route::put('by_categories', 'InstructionController@by_categories' )->name('by_categories');
 });
 /** INSTRUCTION */
 
@@ -119,9 +121,10 @@ Route::name('schools.')->prefix('schools')
 /** SCHOOLS */
 
 /** EXAMS */
-Route::name('exams.')->prefix('exams')
+Route::name('exams.')->prefix('exams')->middleware(['auth'])
 ->group(function () {
-    Route::post('create', 'ExamController@create' )->name('create');
+    Route::get('create', 'ExamController@create' )->name('create');
+    Route::post('store', 'ExamController@store' )->name('store');
     Route::post('save_topics', 'ExamController@save_topics' )->name('save_topics');
     Route::post('save_questions', 'ExamController@save_questions' )->name('save_questions');
     Route::put('update', 'ExamController@update' )->name('update');
@@ -134,8 +137,7 @@ Route::name('exams.')->prefix('exams')
     Route::get('download/{exam_id}/{skills}', 'ExamController@download' )->name('download');
 
     // OBTENER POR NIVELES
-    Route::get('enter_exam', 'ExamController@enter_exam' )->name('enter_exam');
-    Route::post('start_exam', 'ExamController@start_exam' )->name('start_exam');
+    Route::get('/start_exam/{exam_id}', 'ExamController@start_exam' )->name('start_exam');
     Route::post('check_level', 'ExamController@check_level' )->name('check_level');
     Route::post('time_out', 'ExamController@time_out' )->name('time_out');
     
@@ -160,6 +162,9 @@ Route::name('exams.')->prefix('exams')
     Route::get('/get_results', 'ExamController@get_results' )->name('get_results');
     // REVISAR SKILLS
     Route::post('/check_skills', 'ExamController@check_skills' )->name('check_skills');
+    
+    // BORRAR EXAMEN REALIZADO POR EL ALUMNO
+    Route::put('student_delete', 'ExamController@student_delete' )->name('student_delete'); 
 });
 /** EXAMS */
 

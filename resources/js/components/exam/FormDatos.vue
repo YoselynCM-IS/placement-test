@@ -6,28 +6,32 @@
                     <b-form-input v-model="exam.name" required 
                         :disabled="load" style="text-transform:uppercase;"
                     ></b-form-input>
+                    <list-errors :errors="errors" :campo="errors.name"></list-errors>
                 </b-form-group>
-                <b-form-group v-if="groups.length > 0" label="Grupo">
+                <b-form-group label="Grupo">
                     <b-form-select v-model="exam.group_id" required 
                         :disabled="load" :options="groups"
                     ></b-form-select>
+                    <list-errors :errors="errors" :campo="errors.group_id"></list-errors>
                 </b-form-group>
-                <b-row v-if="groups.length > 0">
+                <b-row>
                     <b-col>
                         <b-form-group label="Fecha de aplicación">
                             <b-form-datepicker v-model="exam.start_date" required 
                                 :disabled="load">
                             </b-form-datepicker>
+                            <list-errors :errors="errors" :campo="errors.start_date"></list-errors>
                         </b-form-group>
                     </b-col>
                     <b-col></b-col>
                 </b-row>
-                <b-row v-if="groups.length > 0">
+                <b-row>
                     <b-col>
                         <b-form-group label="Hora de inicio">
                             <b-form-timepicker v-model="exam.start_time" required
                                 :disabled="load" locale="en">
                             </b-form-timepicker>
+                            <list-errors :errors="errors" :campo="errors.start_time"></list-errors>
                         </b-form-group>
                     </b-col>
                     <b-col>
@@ -35,6 +39,7 @@
                             <b-form-timepicker v-model="exam.end_time" required
                                 :disabled="load" locale="en">
                             </b-form-timepicker>
+                            <list-errors :errors="errors" :campo="errors.end_time"></list-errors>
                         </b-form-group>
                     </b-col>
                     <b-col>
@@ -42,20 +47,23 @@
                             <b-form-input v-model="exam.duration" required 
                                 :disabled="load" type="number"
                             ></b-form-input>
+                            <list-errors :errors="errors" :campo="errors.duration"></list-errors>
                         </b-form-group>
                     </b-col>
                 </b-row>
                 <b-row>
-                    <b-col>
-                        <b-form-group label="Margen de error por nivel">
+                    <b-col sm="4">
+                        <b-form-group label="Margen de error (por nivel)">
                             <b-form-input v-model="exam.error_range" required 
                                 :disabled="load" type="number"
                             ></b-form-input>
+                            <list-errors :errors="errors" :campo="errors.error_range"></list-errors>
                         </b-form-group>
                     </b-col>
                     <b-col></b-col>
                 </b-row>
                 <b-form-group label="Indicaciones">
+                    <list-errors :errors="errors" :campo="errors.indications"></list-errors>
                     <vue-editor v-model="exam.indications"></vue-editor>
                 </b-form-group>
                 <b-row class="mt-2">
@@ -82,13 +90,16 @@
 </template>
 
 <script>
+import ListErrors from './ListErrors.vue';
 export default {
-    props: [ 'exam', 'edit' ],
+  components: { ListErrors },
+    props: [ 'exam', 'edit'],
     data(){
         return {
             load: false,
             groups: [],
-            busy: false
+            busy: false,
+            errors: {}
         }
     },
     created: function (){
@@ -114,25 +125,29 @@ export default {
         });
     },
     methods: {
-        onSubmit(){
+        onSubmit() {
             this.load = true;
-            if(!this.edit) {
-                axios.post('/exams/create', this.exam).then(response => {
-                    this.load = false;
-                    this.$emit('exam_created', response.data);
-                }).catch(error => {
-                    this.load = false;
-                    swal("Error", "Ocurrió un error al crear el exámen. Revisa tu conexión a internet y vuelve a intentarlo.", "warning");
-                });
+            if (!this.edit) {
+                var ax = axios.post('/exams/store', this.exam)
             } else {
-                axios.put('/exams/update', this.exam).then(response => {
-                    this.load = false;
-                    this.$emit('exam_created', response.data);
-                }).catch(error => {
-                    this.load = false;
-                    swal("Error", "Ocurrió un error al crear el exámen. Revisa tu conexión a internet y vuelve a intentarlo.", "warning");
-                });
+                var ax = axios.put('/exams/update', this.exam);
             }
+            ax.then(response => {
+                this.load = false;
+                this.errors = {};
+                // console.log(response.data);
+                if (response.data.message)
+                    swal("Importante", response.data.message, "warning");
+                else
+                    this.$emit('exam_created', response.data);
+            }).catch(error => {
+                if (error.response.status === 422)
+                    this.errors = error.response.data.errors || {};
+                else 
+                    swal("Error", "Ocurrió un error al crear el exámen. Revisa tu conexión a internet y vuelve a intentarlo.", "warning");
+
+                this.load = false;
+            });
         },
     }
 }

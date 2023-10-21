@@ -1,7 +1,7 @@
 <template>
     <div>
         <b-tabs pills card vertical>
-            <b-tab v-for="(level, i) in all_levels" v-bind:key="i" 
+            <b-tab v-for="(level, i) in levels" v-bind:key="i" 
                 :title="level.level" @click="position = i">
                 <b-table :items="level.topics" :fields="fieldsTopics"
                     :select-mode="selectMode" responsive="sm" ref="selectableTable"
@@ -10,8 +10,8 @@
                         {{ data.index + 1 }}
                     </template>
                     <template v-slot:cell(skills)="data">
-                        <ul v-for="(categorie, j) in data.item.categories"  v-bind:key="j">
-                            <li>{{ categorie }}</li>
+                        <ul v-for="(skill, j) in data.item.skills"  v-bind:key="j">
+                            <li>{{ skill.categorie }}</li>
                         </ul>
                     </template>
                     <template #cell(selected)="{ rowSelected }">
@@ -47,28 +47,27 @@ export default {
             levelTopics: [],
             position: 0,
             topics: [],
-            all_levels: []
         }
     },
     created: function(){
         this.levels.forEach(level => {
-            var dato1 = {
-                id: level.id, 
-                level: level.level, 
-                topics: []
-            };
-            level.topics.forEach(topic => {
-                var categories = this.set_categories(topic.instructions);
-                var dato2 = {
-                    id: topic.id, 
-                    level_id: topic.level_id, 
-                    topic: topic.topic, 
-                    categories: categories,
-                    instructions: topic.instructions
-                };
-                dato1.topics.push(dato2);
-            });
-            this.all_levels.push(dato1);
+        //     var dato1 = {
+        //         id: level.id, 
+        //         level: level.level, 
+        //         topics: []
+        //     };
+        //     level.topics.forEach(topic => {
+        //         var categories = this.set_categories(topic.instructions);
+        //         var dato2 = {
+        //             id: topic.id, 
+        //             level_id: topic.level_id, 
+        //             topic: topic.topic, 
+        //             categories: categories,
+        //             instructions: topic.instructions
+        //         };
+        //         dato1.topics.push(dato2);
+        //     });
+        //     this.all_levels.push(dato1);
             this.levelTopics.push({level_id: level.id, topics: []});
         });
     },

@@ -1,11 +1,11 @@
 <template>
     <div>
-        <div v-if="!openCreate && !openDetails">
+        <div v-if="!openDetails">
             <b-row>
                 <b-col><h4>Mis examenes</h4></b-col>
                 <b-col sm="3">
                     <b-button pill id="btn-actions" block :disabled="load"
-                        @click="openCreate = true">
+                        href="/exams/create">
                         <b-icon-plus></b-icon-plus> Crear examen
                     </b-button>
                 </b-col>
@@ -15,16 +15,13 @@
                     <b-row>
                         <b-col>
                             <strong>{{ exam.name }}</strong> <br>
-                            <label v-if="exam.start_date" id="font-1">
+                            <label id="font-1">
                                 <strong>Fecha de aplicación: </strong>
                                 {{ exam.start_date }} {{ exam.start_time }}
                                 <strong>Duración: </strong> {{ exam.duration }} minutos
                             </label>
-                            <label v-else id="font-1">
-                                Ir a <strong><i>Editar examen</i></strong>.
-                            </label>
                         </b-col>
-                        <b-col sm="7">
+                        <b-col>
                             <b-button pill id="btn-actions" size="sm"
                                 v-b-tooltip.hover title="Visualizar examen"
                                 @click="details_exam(exam)">
@@ -80,22 +77,6 @@
                 <h4><b>Cargando examen...</b></h4>
             </div> 
         </div>
-        <div v-if="openCreate">
-            <b-row class="mb-2">
-                <b-col>
-                    <h5 class="mb-3"><b>Crear examen</b></h5>
-                </b-col>
-                <b-col sm="2">
-                    <b-button pill id="btn-actions" :disabled="stepProccess" 
-                        @click="openCreate = false">
-                        <b-icon-arrow-left></b-icon-arrow-left> Mis examenes
-                    </b-button>
-                </b-col>
-            </b-row><hr>
-            <create-exam :role="role" @exams_created="exams_created"
-                @step_proccess="step_proccess">
-            </create-exam>
-        </div>
         <!-- MODALS -->
         <b-modal hide-backdrop hide-footer title="Editar examen" v-model="openEditE"
             size="xl" scrollable>
@@ -145,7 +126,6 @@ export default {
             openDetails: false,
             examCom: {},
             load: false,
-            openCreate: false,
             topics: [],
             exam_id: null,
             stepProccess: false,
@@ -160,14 +140,28 @@ export default {
         // EDITAR EXAMEN
         edit_exam(exam){
             axios.get('/exams/show', {params: {exam_id: exam.id}}).then(response => {
-                this.exam = {
-                    id: exam.id, teacher_id: exam.teacher_id, name: exam.name, group_id: exam.group_id, 
-                    start_date: exam.start_date, start_time: exam.start_time, end_time: exam.end_time,
-                    error_range: exam.error_range, duration: exam.duration, indications: exam.indications,
-                    questions: response.data.questions, topics:[], topics_s: response.data.topics, categories: []
-                };
+                this.setDatos_exam(response.data.exam);
                 this.openEditE = true;
+                // questions: response.data.questions, topics: [], topics_s: response.data.topics, categories: []
             }); 
+        },
+        setDatos_exam(exam) {
+            this.exam = {
+                id: exam.id,
+                teacher_id: exam.teacher_id,
+                name: exam.name,
+                group_id: exam.group_id,
+                start_date: exam.start_date,
+                start_time: exam.start_time,
+                end_time: exam.end_time,
+                error_range: exam.error_range,
+                duration: exam.duration,
+                indications: exam.indications,
+                topics_count: exam.topics_count,
+                questions_count: exam.questions_count,
+                categories: [],
+                topics: []
+            };
         },
         // EXAMEN ACTUALIZADO
         updated_exam(){
@@ -182,20 +176,17 @@ export default {
             this.load = true;
             axios.get('/exams/show', {params: {exam_id: exam.id}}).then(response => {
                 this.examCom = response.data;
-                if(this.examCom.questions.length > 0) {
+                if(this.examCom.instructions.length > 0) {
                     this.openDetails = true;
                 } else {
-                    swal("", "El examen se encuentra en proceso para ser guardado.", "info");
+                    swal("", "El examen no se ha concluido, faltan temas/preguntas por agregar. Verificar en editar examen.", "info");
                 }
                 this.load = false;
             });
         },
         // EXAMEN CREADO
         exams_created(){
-            swal("OK", "El examen fue creado exitosamente. Presiona en OK para visualizarlo.", "success")
-            .then((value) => {
-                location.href = `/teacher/exams`;
-            });
+            
         },
         // ENVIAR NOTIFICACIÓN DE EXAMEN
         notification_exam(exam){

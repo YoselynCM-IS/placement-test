@@ -3,20 +3,15 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-
     <!-- CSRF Token -->
     <meta name="csrf-token" content="{{ csrf_token() }}">
-
     <title>{{ config('app.name', 'Majestic Education') }}</title>
-
     <!-- Fonts -->
     <link rel="dns-prefetch" href="//fonts.gstatic.com">
     <link href="https://fonts.googleapis.com/css?family=Nunito" rel="stylesheet">
-
     <!-- Styles -->
     <link href="{{ asset('css/app.css') }}" rel="stylesheet">
     <link href="{{ asset('css/styles.css') }}" rel="stylesheet">
-
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <style>
         #controls {
@@ -24,7 +19,6 @@
             margin-top: 2rem;
             max-width: 28em;
         } 
-
         button {
             flex-grow: 1;
             margin-left: 2px;
@@ -35,31 +29,28 @@
             font-weight: bold;
             font-size: 1.5rem;
         }
-
         #recordButton, #pauseButton, #stopButton {
             border: none;
             border-radius: 40px;
             background-color: #A93235;
             color:#ffffff;
         }
-
         #uploadButton{ 
             border: 1px solid #A93235;
             border-radius: 40px;
-            background-color: transparent;
-            color: #A93235;
+            background-color: #A93235;
+            color: #ffffff;
         }
-
         audio {
             display: block;
             width: 100%;
             margin-top: 0.2rem;
         }
 
-        li {
+        /* li {
             list-style: none;
             margin-bottom: 1rem;
-        }
+        } */
 
         #recordingsList{
             max-width: 28em;
@@ -68,37 +59,39 @@
   </head>
   <body>
     <div>
-        @include('partials.navigation.general')
-        <div id="app" class="container">
+        <div id="app" class="container mt-5">
             <b-alert show variant="warning">
                 <b>IMPORTANTE</b>
-                <ol>
+                <ul>
                     <li>No refrescar la página.</li>
                     <li>Máximo 3 minutos de grabación.</li>
-                </ol>
+                    <li>La grabación se puede subir una sola vez.</li>
+                </ul>
             </b-alert>
-            <b-card border-variant="light">
-                <template #header>
-                    <p>{!! $question->instruction->instruction !!}</p>
-                </template>
-                <p>{!! $question->question !!}</p>
-            </b-card>
         </div>
         <main class="container">
-            <div id="controls">
-                <button id="recordButton" class="btn">
-                    <i class="fa fa-circle"></i> Record
-                </button>
-                <button id="pauseButton" class="btn" disabled>
-                    <i class="fa fa-pause-circle"></i> Pause
-                </button>
-                <button id="stopButton" class="btn" disabled>
-                    <i class="fa fa-stop-circle"></i> Stop
-                </button>
-            </div><hr>
-            <p><strong>Recording:</strong></p>
-            <ol id="recordingsList"></ol>
-        </main>
+        <div class="row">
+            <div class="col-md-6">
+                <p>{!! $question->instruction->instruction !!}</p><hr>
+                <p>{!! $question->question !!}</p>
+            </div>
+            <div class="col-md-6">
+                <div id="controls">
+                    <button id="recordButton" class="btn">
+                        <i class="fa fa-microphone"></i>
+                    </button>
+                    <button id="pauseButton" class="btn" disabled>
+                        <i class="fa fa-pause-circle"></i>
+                    </button>
+                    <button id="stopButton" class="btn" disabled>
+                        <i class="fa fa-stop-circle"></i>
+                    </button>
+                </div>
+                <p class="mt-3"><strong>Recording</strong></p>
+                <div id="recordingsList"></div>
+            </div>
+        </div>
+    </main>
     </div>
     
     <!-- inserting these scripts at the end to be able to use all the elements in the DOM -->
@@ -191,11 +184,11 @@
             if (rec.recording){
                 //pause
                 rec.stop();
-                pauseButton.innerHTML=`<i class="fa fa-pause-circle-o"></i> Resume`;
+                pauseButton.innerHTML=`<i class="fa fa-pause-circle-o"></i>`;
             }else{
                 //resume
                 rec.record()
-                pauseButton.innerHTML=`<i class="fa fa-pause-circle"></i> Pause`;
+                pauseButton.innerHTML=`<i class="fa fa-pause-circle"></i>`;
 
             }
         }
@@ -209,7 +202,7 @@
             pauseButton.disabled = true;
 
             //reset button just in case the recording is stopped while paused
-            pauseButton.innerHTML=`<i class="fa fa-pause-circle"></i> Pause`;
+            pauseButton.innerHTML=`<i class="fa fa-pause-circle"></i>`;
             
             //tell the recorder to stop the recording
             rec.stop();
@@ -225,7 +218,7 @@
             
             var url = URL.createObjectURL(blob);
             var au = document.createElement('audio');
-            var li = document.createElement('li');
+            var li = document.createElement('p');
             // var link = document.createElement('a');
 
             //name of .wav file to use during upload and download (without extendion)
@@ -262,7 +255,6 @@
                 formData.append("exam_id", {!! json_encode($exam_id) !!});
                 axios.post('/exams/save_record', formData, { headers: { 'content-type': 'multipart/form-data' } })
                 .then(response => {
-                    console.log(response.data);
                     if(response.data == 2){
                         swal({
                             title: '', text: 'La grabación se guardó correctamente.',
@@ -285,6 +277,7 @@
             li.appendChild(upload)//add the upload link to li
 
             //add the li element to the ol
+            document.getElementById('recordingsList').innerHTML = '';
             recordingsList.appendChild(li);
         }
     </script>
