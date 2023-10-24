@@ -376,11 +376,6 @@ class ExamController extends Controller
     // REVISAR PREGUNTAS DEL NIVEL
     public function check_level(Request $request){
         $exam = Exam::find($request->exam_id);
-        // $datos = $this->get_instQuestions($exam, 2);
-        // return response()->json([
-        //     'status' => 1,
-        //     'datos' => $datos
-        // ]);
         $n = $this->save_results($exam, $request);
         $level_id = $n['level_id'];
         $number_questions = $n['number_questions'];

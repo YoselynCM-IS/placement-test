@@ -156,10 +156,10 @@ export default {
             this.load = true;
             axios.post('/exams/check_level', this.form).then(response => {
                 this.form.instructions = [];
-                var audio = document.getElementById('audioIdE');
-                audio.pause();
-                audio.currentTime = 0;
-                audio.src = null;
+                // var audio = document.getElementById('audioIdE');
+                // audio.pause();
+                // audio.currentTime = 0;
+                // audio.src = null;
                 if (response.data.status == 1) {
                     this.form.instructions = response.data.datos.instructions;
                 } else {
