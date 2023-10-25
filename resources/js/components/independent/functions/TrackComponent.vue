@@ -7,7 +7,7 @@
             <b-col>
                 <audio id="audioIdE"></audio>
                 <b-button @click="playAudio()" pill size="sm" variant="dark"><b><b-icon-play></b-icon-play> Play</b></b-button>
-                <!-- <b-button @click="pauseAudio()" pill size="sm" variant="dark"><b-icon-pause></b-icon-pause></b-button> -->
+                <b-button @click="stopAudio()" pill size="sm" variant="dark"><b><b-icon-stop></b-icon-stop> Stop</b></b-button>
             </b-col>
         </b-row>
     </div>
@@ -24,9 +24,10 @@ export default {
             audio.src = this.link;
             audio.play();
         },
-        pauseAudio() {
+        stopAudio() {
             var audio = document.getElementById('audioIdE');
             audio.pause();
+            audio.currentTime = 0;
         }
     }
 }
