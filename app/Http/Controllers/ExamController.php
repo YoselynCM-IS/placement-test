@@ -270,13 +270,22 @@ class ExamController extends Controller
     }
 
     // MOSTRAR DETALLES DEL EXAMEN
+    public function get_details($exam_id){
+        $datos = $this->details_organize($exam_id);
+        return view('exams.details', compact('datos'));
+    }
+
     public function show(Request $request){
-        $exam = Exam::whereId($request->exam_id)
+        $datos = $this->details_organize($request->exam_id);
+        return response()->json($datos);
+    }
+
+    public function details_organize($exam_id){
+        $exam = Exam::whereId($exam_id)
                 ->with('group', 'teacher.user')
                 ->withCount('topics')->withCount('questions')
                 ->first();
-        $datos = $this->get_instQuestions($exam, \DB::table('levels')->pluck('id'));
-        return response()->json($datos);
+        return $this->get_instQuestions($exam, \DB::table('levels')->pluck('id'));
     }
 
     // CREAR EXAMEN PARA STUDIANTE Y OBTENER EL NIVEL 1 DEL EXAMEN

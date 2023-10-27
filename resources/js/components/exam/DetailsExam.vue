@@ -1,5 +1,15 @@
 <template>
     <div>
+        <b-row class="mb-2">
+            <b-col>
+                <h5 class="mb-3"><b>Examen</b> <i>(Vista del profesor)</i></h5>
+            </b-col>
+            <b-col sm="2">
+                <b-button pill id="btn-actions" href="/teacher/exams">
+                    <b-icon-arrow-left></b-icon-arrow-left> Mis examenes
+                </b-button>
+            </b-col>
+        </b-row>
         <b-row>
             <!-- DETALLES DEL EXAMEN -->
             <b-col sm="4">

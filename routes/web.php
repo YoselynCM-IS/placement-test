@@ -131,6 +131,7 @@ Route::name('exams.')->prefix('exams')->middleware(['auth'])
     Route::put('update_topics', 'ExamController@update_topics' )->name('update_topics');
     Route::delete('delete', 'ExamController@delete' )->name('delete');
     Route::put('send', 'ExamController@send' )->name('send');
+    Route::get('/get_details/{exam_id}', 'ExamController@get_details' )->name('get_details');
     Route::get('show', 'ExamController@show' )->name('show');
     Route::get('by_school', 'ExamController@by_school' )->name('by_school');
     Route::get('by_teacher', 'ExamController@by_teacher' )->name('by_teacher');

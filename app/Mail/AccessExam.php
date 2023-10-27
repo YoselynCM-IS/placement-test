@@ -33,7 +33,7 @@ class AccessExam extends Mailable
     public function build()
     {
         return $this->from('info@placementtestmajesticeducation.com')
-            ->cc('me.examencolocacion@gmail.com')
+            // ->cc('me.examencolocacion@gmail.com')
             ->subject(__("Examen de colocación"))
             ->markdown('mails.access-exam') //Template
             ->with('exam', $this->exam)

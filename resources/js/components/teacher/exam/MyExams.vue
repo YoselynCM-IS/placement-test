@@ -24,7 +24,8 @@
                         <b-col>
                             <b-button pill id="btn-actions" size="sm"
                                 v-b-tooltip.hover title="Visualizar examen"
-                                @click="details_exam(exam)">
+                                :href="`/exams/get_details/${exam.id}`">
+                                <!-- @click="details_exam(exam)" -->
                                 <b-icon-eye></b-icon-eye>
                             </b-button>
                             <b-button pill id="btn-actions" size="sm"
@@ -58,16 +59,6 @@
         </div>
         <div v-if="openDetails">
             <div v-if="!load">
-                <b-row class="mb-2">
-                    <b-col>
-                        <h5 class="mb-3"><b>Examen</b> <i>(Vista del profesor)</i></h5>
-                    </b-col>
-                    <b-col sm="2">
-                        <b-button pill id="btn-actions" @click="openDetails = false">
-                            <b-icon-arrow-left></b-icon-arrow-left> Mis examenes
-                        </b-button>
-                    </b-col>
-                </b-row>
                 <gral-details-exam :exam="examCom"></gral-details-exam>
             </div>
             <div v-else class="text-center">
@@ -172,18 +163,18 @@ export default {
             });
         },
         // MOSTRAR DETALLES DEL EXAMEN
-        details_exam(exam){
-            this.load = true;
-            axios.get('/exams/show', {params: {exam_id: exam.id}}).then(response => {
-                this.examCom = response.data;
-                if(this.examCom.instructions.length > 0) {
-                    this.openDetails = true;
-                } else {
-                    swal("", "El examen no se ha concluido, faltan temas/preguntas por agregar. Verificar en editar examen.", "info");
-                }
-                this.load = false;
-            });
-        },
+        // details_exam(exam){
+        //     this.load = true;
+        //     axios.get('/exams/show', {params: {exam_id: exam.id}}).then(response => {
+        //         this.examCom = response.data;
+        //         if(this.examCom.instructions.length > 0) {
+        //             this.openDetails = true;
+        //         } else {
+        //             swal("", "El examen no se ha concluido, faltan temas/preguntas por agregar. Verificar en editar examen.", "info");
+        //         }
+        //         this.load = false;
+        //     });
+        // },
         // EXAMEN CREADO
         exams_created(){
             

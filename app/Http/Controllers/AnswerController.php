@@ -12,7 +12,14 @@ class AnswerController extends Controller
     public function create(Request $request){
         \DB::beginTransaction();
         try {
-            if($request->type_id == 1 || $request->type_id == 4) {
+            if($request->type_id == 1) {
+                Answer::create([
+                    'question_id' => $request->id,
+                    'answer' => $request->answer,
+                    'value' => 'correct'
+                ]);
+            }
+            if($request->type_id == 4) {
                 Answer::create([
                     'question_id' => $request->id,
                     'answer' => $request->answer
