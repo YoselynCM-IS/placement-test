@@ -47,6 +47,10 @@
 														@yield('content')
 													</td>
 												</tr>
+												<tr>
+													<br><br>
+													<label>No responder este correo, tus respuestas no serán leídas.</label>
+												</tr>
 											</table>
 										</td>
 									</tr>
