@@ -31,7 +31,7 @@ class SendData extends Mailable
     public function build()
     {
         return $this->from('info@placementtestmajesticeducation.com')
-            // ->cc('me.examencolocacion@gmail.com')
+            ->cc('me.examencolocacion@gmail.com')
             ->subject(__("Datos de acceso"))
             ->markdown('mails.access-system') //Template
             ->with('user', $this->user);
