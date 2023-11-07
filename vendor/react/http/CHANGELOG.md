@@ -1,5 +1,154 @@
 # Changelog
 
+## 1.9.0 (2023-04-26)
+
+This is a **SECURITY** and feature release for the 1.x series of ReactPHP's HTTP component.
+
+*   Security fix: This release fixes a medium severity security issue in ReactPHP's HTTP server component
+    that affects all versions between `v0.8.0` and `v1.8.0`. All users are encouraged to upgrade immediately.
+    (CVE-2023-26044 reported and fixed by @WyriHaximus)
+
+*   Feature: Support HTTP keep-alive for HTTP client (reusing persistent connections).
+    (#481, #484, #486 and #495 by @clue)
+
+    This feature offers significant performance improvements when sending many
+    requests to the same host as it avoids recreating the underlying TCP/IP
+    connection and repeating the TLS handshake for secure HTTPS requests.
+
+    ```php
+    $browser = new React\Http\Browser();
+
+    // Up to 300% faster! HTTP keep-alive is enabled by default
+    $response = React\Async\await($browser->get('https://httpbingo.org/redirect/6'));
+    assert($response instanceof Psr\Http\Message\ResponseInterface);
+    ```
+
+*   Feature: Add `Request` class to represent outgoing HTTP request message.
+    (#480 by @clue)
+
+*   Feature: Preserve request method and body for `307 Temporary Redirect` and `308 Permanent Redirect`.
+    (#442 by @dinooo13)
+
+*   Feature: Include buffer logic to avoid dependency on reactphp/promise-stream.
+    (#482 by @clue)
+
+*   Improve test suite and project setup and report failed assertions.
+    (#478 by @clue, #487 and #491 by @WyriHaximus and #475 and #479 by @SimonFrings)
+
+## 1.8.0 (2022-09-29)
+
+*   Feature: Support for default request headers.
+    (#461 by @51imyy)
+
+    ```php
+    $browser = new React\Http\Browser();
+    $browser = $browser->withHeader('User-Agent', 'ACME');
+
+    $browser->get($url)->then(…);
+    ```
+
+*   Feature: Forward compatibility with upcoming Promise v3.
+    (#460 by @clue)
+
+## 1.7.0 (2022-08-23)
+
+This is a **SECURITY** and feature release for the 1.x series of ReactPHP's HTTP component.
+
+*   Security fix: This release fixes a medium severity security issue in ReactPHP's HTTP server component
+    that affects all versions between `v0.7.0` and `v1.6.0`. All users are encouraged to upgrade immediately.
+    Special thanks to Marco Squarcina (TU Wien) for reporting this and working with us to coordinate this release.
+    (CVE-2022-36032 reported by @lavish and fixed by @clue)
+
+*   Feature: Improve HTTP server performance by ~20%, reuse syscall values for clock time and socket addresses.
+    (#457 and #467 by @clue)
+
+*   Feature: Full PHP 8.2+ compatibility, refactor internal `Transaction` to avoid assigning dynamic properties.
+    (#459 by @clue and #466 by @WyriHaximus)
+
+*   Feature / Fix: Allow explicit `Content-Length` response header on `HEAD` requests.
+    (#444 by @mrsimonbennett)
+
+*   Minor documentation improvements.
+    (#452 by @clue, #458 by @nhedger, #448 by @jorrit and #446 by @SimonFrings)
+
+*   Improve test suite, update to use new reactphp/async package instead of clue/reactphp-block,
+    skip memory tests when lowering memory limit fails and fix legacy HHVM build.
+    (#464 and #440 by @clue and #450 by @SimonFrings)
+
+## 1.6.0 (2022-02-03)
+
+*   Feature: Add factory methods for common HTML/JSON/plaintext/XML response types.
+    (#439 by @clue)
+
+    ```php
+    $response = React\Http\Response\html("<h1>Hello wörld!</h1>\n");
+    $response = React\Http\Response\json(['message' => 'Hello wörld!']);
+    $response = React\Http\Response\plaintext("Hello wörld!\n");
+    $response = React\Http\Response\xml("<message>Hello wörld!</message>\n");
+    ```
+
+*   Feature: Expose all status code constants via `Response` class.
+    (#432 by @clue)
+
+    ```php
+    $response = new React\Http\Message\Response(
+        React\Http\Message\Response::STATUS_OK, // 200 OK
+        …
+    );
+    $response = new React\Http\Message\Response(
+        React\Http\Message\Response::STATUS_NOT_FOUND, // 404 Not Found
+        …
+    );
+    ```
+
+*   Feature: Full support for PHP 8.1 release.
+    (#433 by @SimonFrings and #434 by @clue)
+
+*   Feature / Fix: Improve protocol handling for HTTP responses with no body.
+    (#429 and #430 by @clue)
+
+*   Internal refactoring and internal improvements for handling requests and responses.
+    (#422 by @WyriHaximus and #431 by @clue)
+
+*   Improve documentation, update proxy examples, include error reporting in examples.
+    (#420, #424, #426, and #427 by @clue)
+
+*   Update test suite to use default loop.
+    (#438 by @clue)
+
+## 1.5.0 (2021-08-04)
+
+*   Feature: Update `Browser` signature to take optional `$connector` as first argument and
+    to match new Socket API without nullable loop arguments.
+    (#418 and #419 by @clue)
+
+    ```php
+    // unchanged
+    $browser = new React\Http\Browser();
+
+    // deprecated
+    $browser = new React\Http\Browser(null, $connector);
+    $browser = new React\Http\Browser($loop, $connector);
+
+    // new
+    $browser = new React\Http\Browser($connector);
+    $browser = new React\Http\Browser($connector, $loop);
+    ```
+
+*   Feature: Rename `Server` to `HttpServer` to avoid class name collisions and
+    to avoid any ambiguities with regards to the new `SocketServer` API.
+    (#417 and #419 by @clue)
+
+    ```php
+    // deprecated
+    $server = new React\Http\Server($handler);
+    $server->listen(new React\Socket\Server(8080));
+
+    // new
+    $http = new React\Http\HttpServer($handler);
+    $http->listen(new React\Socket\SocketServer('127.0.0.1:8080'));
+    ```
+
 ## 1.4.0 (2021-07-11)
 
 A major new feature release, see [**release announcement**](https://clue.engineering/2021/announcing-reactphp-default-loop).

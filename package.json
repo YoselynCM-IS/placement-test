@@ -8,8 +8,7 @@
         "hot": "cross-env NODE_ENV=development node_modules/webpack-dev-server/bin/webpack-dev-server.js --inline --hot --disable-host-check --config=node_modules/laravel-mix/setup/webpack.config.js",
         "prod": "npm run production",
         "production": "cross-env NODE_ENV=production node_modules/webpack/bin/webpack.js --no-progress --config=node_modules/laravel-mix/setup/webpack.config.js",
-        "postinstall": "npm run prod",
-        "heroku-postbuild": "npm run prod"
+        "postinstall": "npm run prod"
     },
     "engines": {
         "node": "12.x"
@@ -17,7 +16,7 @@
     "devDependencies": {
         "axios": "^0.19",
         "bootstrap": "^4.6.0",
-        "cross-env": "^7.0",
+        "cross-env": "^7.0.3",
         "jquery": "^3.2",
         "laravel-echo": "^1.10.0",
         "laravel-mix": "^5.0.1",

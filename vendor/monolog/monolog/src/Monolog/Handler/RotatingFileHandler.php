@@ -61,7 +61,7 @@ class RotatingFileHandler extends StreamHandler
     }
 
     /**
-     * {@inheritdoc}
+     * {@inheritDoc}
      */
     public function close(): void
     {
@@ -73,7 +73,7 @@ class RotatingFileHandler extends StreamHandler
     }
 
     /**
-     * {@inheritdoc}
+     * {@inheritDoc}
      */
     public function reset()
     {
@@ -108,7 +108,7 @@ class RotatingFileHandler extends StreamHandler
     }
 
     /**
-     * {@inheritdoc}
+     * {@inheritDoc}
      */
     protected function write(array $record): void
     {
@@ -191,7 +191,11 @@ class RotatingFileHandler extends StreamHandler
         $fileInfo = pathinfo($this->filename);
         $glob = str_replace(
             ['{filename}', '{date}'],
-            [$fileInfo['filename'], '[0-9][0-9][0-9][0-9]*'],
+            [$fileInfo['filename'], str_replace(
+                ['Y', 'y', 'm', 'd'],
+                ['[0-9][0-9][0-9][0-9]', '[0-9][0-9]', '[0-9][0-9]', '[0-9][0-9]'],
+                $this->dateFormat)
+            ],
             $fileInfo['dirname'] . '/' . $this->filenameFormat
         );
         if (isset($fileInfo['extension'])) {
