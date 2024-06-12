@@ -89,6 +89,47 @@ class ExamController extends Controller
         return response()->json($exam);
     }
 
+    // COPIAR EXAMEN
+    public function copy(Request $request){
+        $exam = Exam::find($request->exam_id);
+        
+        \DB::beginTransaction();
+        try {
+            // COPIAR exam
+            $exam_copy = $exam->replicate();
+            $exam_copy->save();
+
+            // COPIAR exam_categorie
+            $exam->categories->map(function($categorie) use($exam_copy){
+                $exam_copy->categories()->attach($categorie->id);
+            });
+
+            // COPIAR exam_topic
+            $exam->topics->map(function($topic) use($exam_copy){
+                $exam_copy->topics()->attach($topic->id);
+            });
+
+            // COPIAR exam_instruction
+            $exam->instructions->map(function($instruction) use($exam_copy){
+                $exam_copy->instructions()->attach($instruction->id, [
+                    'level_id' => $instruction->topic->level_id
+                ]);
+            });
+
+            // COPIAR exam_question
+            $exam->questions->map(function($question) use($exam_copy){
+                $exam_copy->questions()->attach($question->id, [
+                    'instruction_id' => $question->instruction_id
+                ]);
+            });
+
+            \DB::commit();
+        }  catch (Exception $e) {
+            \DB::rollBack();
+        }
+        return response()->json(true);
+    }
+
     public function check_campos(){
         return [
             'name' => ['required', 'string', 'min:5'],

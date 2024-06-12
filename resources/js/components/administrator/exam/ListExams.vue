@@ -92,6 +92,10 @@
                                 size="sm" :disabled="load">
                                 <b-icon-x></b-icon-x>
                             </b-button>
+                            <b-button v-if="role.role == 'admin'" pill id="btn-actions"
+                                @click="copy_exam(data.item.id)" size="sm" :disabled="load">
+                                <b-icon-files></b-icon-files>
+                            </b-button>
                         </template>
                         <template v-slot:cell(send)="data">
                             <b-button v-if="!data.item.send" id="btn-actions" pill size="sm" 
@@ -307,6 +311,18 @@ export default {
             this.load = true;
             axios.get(`/exams/by_teacher?page=${page}`, {params: {teacher_id: this.teacher_id}}).then(response => {
                 this.examsData = response.data;
+                this.load = false;
+            });
+        },
+        // COPIAR EXAMEN
+        copy_exam(exam_id){
+            this.load = true;
+            let formData = { exam_id: exam_id };
+            axios.post('/exams/copy', formData).then(response => {
+                swal("OK", "El examen se duplico correctamente.", "success");
+                this.load = false;
+            })
+            .catch(error => {
                 this.load = false;
             });
         }

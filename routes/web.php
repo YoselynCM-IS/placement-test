@@ -166,6 +166,9 @@ Route::name('exams.')->prefix('exams')->middleware(['auth'])
     
     // BORRAR EXAMEN REALIZADO POR EL ALUMNO
     Route::put('student_delete', 'ExamController@student_delete' )->name('student_delete'); 
+
+    // COPIAR EXAMEN
+    Route::post('/copy', 'ExamController@copy' )->name('copy');
 });
 /** EXAMS */
 
