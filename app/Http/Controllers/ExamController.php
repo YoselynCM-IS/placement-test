@@ -502,6 +502,9 @@ class ExamController extends Controller
                 $questions = collect($is['questions']);
                 $questions->map(function ($question) use($exam, &$number_questions, &$number_correct, $advance, &$number_speak, $instruction) {
                     $write = $question['answer'];
+                    if(Str::of($write)->contains('´'))
+                        $write = Str::of($write)->replace("´", "'");
+
                     $value = 'incorrect';
                     $points = 0;
 
