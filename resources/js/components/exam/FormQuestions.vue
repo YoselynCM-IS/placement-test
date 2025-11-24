@@ -8,13 +8,13 @@
                 <b-col sm="3">
                     <b-button pill block :disabled="load"
                             id="btn-actions"  @click="choose_questions()">
-                        <b-icon-arrow-right-circle-fill></b-icon-arrow-right-circle-fill> Continuar
+                        <b-icon-arrow-right-circle-fill></b-icon-arrow-right-circle-fill> Iniciar
                     </b-button>
                 </b-col>
             </b-row>
         </b-card>
         <b-tabs v-else pills card vertical>
-            <b-tab v-for="(topic, i) in examTopics" v-bind:key="i"
+            <b-tab v-for="(topic, i) in levelTopics" v-bind:key="i"
                  @click="position = i">
                 <template #title>
                     {{ topic.topic }} <br>
@@ -100,6 +100,7 @@ export default {
             load: false,
             form: {
                 exam_id: this.exam.id,
+                level_id: this.exam.level_id,
                 questions: []
             },
             dismissSecs: 5,
@@ -107,13 +108,13 @@ export default {
             errorQuestions: false,
             ts: [],
             dismissMsg: '',
-            examTopics: []
+            levelTopics: []
         }
     },
     methods: {
         choose_questions(){
             this.load = true;
-            axios.get('/exams/get_topics', {params: {exam_id: this.exam.id}}).then(response => {
+            axios.get('/exams/get_topics', {params: {exam_id: this.exam.id, level_id: this.form.level_id}}).then(response => {
                 // this.ts = response.data.topics;
                 // this.ts.forEach(topic => {
                 //     var dato = { 
@@ -150,14 +151,22 @@ export default {
                 //     this.list_topics.push(dato);
                 // });
                 this.chooseQuestions = true;
-                this.examTopics = response.data;
+                this.levelTopics = response.data;
                 this.load = false;
+            }).catch(error => {
+                this.load = false;
+                // swal("Error", "Ocurrió un error al crear los exámenes. Revisa tu conexión a internet y vuelve a intentarlo.", "warning");
             });
         },
         save_questions(){
             this.load = true;
             axios.post('/exams/save_questions', this.form).then(response => {
-                this.$emit('questions_created', response.data);
+                if(response.data == 0){
+                    this.$emit('questions_created', response.data);
+                } else {
+                    this.form.level_id = response.data;
+                    this.choose_questions();
+                }
                 this.load = false;
             }).catch(error => {
                 this.load = false;
@@ -180,7 +189,6 @@ export default {
                         swal("Importante", response.data.message, "warning");
                     else
                         this.save_questions();
-                    
                     this.load = false;
                 }).catch(error => {
                     this.load = false;

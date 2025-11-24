@@ -49,7 +49,8 @@ export default {
                 error_range: 2,
                 duration: 40,
                 topics: [],
-                categories: []
+                categories: [],
+                level_id: 1
             },
             topics: [], // REVISAR
             levels: [],

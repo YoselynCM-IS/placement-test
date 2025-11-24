@@ -55,7 +55,7 @@ class Exam extends Model
 
     // MUCHOS A MUCHOS
     public function topics(){
-        return $this->belongsToMany(Topic::class);
+        return $this->belongsToMany(Topic::class)->withPivot('status');
     }
 
     // MUCHOS A MUCHOS

@@ -2895,7 +2895,8 @@ __webpack_require__.r(__webpack_exports__);
         error_range: 2,
         duration: 40,
         topics: [],
-        categories: []
+        categories: [],
+        level_id: 1
       },
       topics: [],
       // REVISAR
@@ -3436,6 +3437,7 @@ __webpack_require__.r(__webpack_exports__);
       load: false,
       form: {
         exam_id: this.exam.id,
+        level_id: this.exam.level_id,
         questions: []
       },
       dismissSecs: 5,
@@ -3443,7 +3445,7 @@ __webpack_require__.r(__webpack_exports__);
       errorQuestions: false,
       ts: [],
       dismissMsg: '',
-      examTopics: []
+      levelTopics: []
     };
   },
   methods: {
@@ -3453,7 +3455,8 @@ __webpack_require__.r(__webpack_exports__);
       this.load = true;
       axios.get('/exams/get_topics', {
         params: {
-          exam_id: this.exam.id
+          exam_id: this.exam.id,
+          level_id: this.form.level_id
         }
       }).then(function (response) {
         // this.ts = response.data.topics;
@@ -3490,8 +3493,10 @@ __webpack_require__.r(__webpack_exports__);
         //     this.list_topics.push(dato);
         // });
         _this.chooseQuestions = true;
-        _this.examTopics = response.data;
+        _this.levelTopics = response.data;
         _this.load = false;
+      })["catch"](function (error) {
+        _this.load = false; // swal("Error", "Ocurrió un error al crear los exámenes. Revisa tu conexión a internet y vuelve a intentarlo.", "warning");
       });
     },
     save_questions: function save_questions() {
@@ -3499,7 +3504,13 @@ __webpack_require__.r(__webpack_exports__);
 
       this.load = true;
       axios.post('/exams/save_questions', this.form).then(function (response) {
-        _this2.$emit('questions_created', response.data);
+        if (response.data == 0) {
+          _this2.$emit('questions_created', response.data);
+        } else {
+          _this2.form.level_id = response.data;
+
+          _this2.choose_questions();
+        }
 
         _this2.load = false;
       })["catch"](function (error) {
@@ -3680,20 +3691,35 @@ __webpack_require__.r(__webpack_exports__);
     })["catch"](function (error) {});
   },
   methods: {
+    // GUARDAR SKILLS SELECCIONADAS
+    save_categories: function save_categories() {
+      var _this2 = this;
+
+      this.busy = true;
+      var form = {
+        exam_id: this.exam.id,
+        categories: this.exam.categories
+      };
+      axios.post('/exams/save_categories', form).then(function (response) {
+        _this2.choose_topics();
+      })["catch"](function (error) {
+        _this2.busy = false;
+      });
+    },
     // ELEGIR TEMAS
     choose_topics: function choose_topics() {
-      var _this2 = this;
+      var _this3 = this;
 
       this.busy = true;
       var form = {
         categories: this.exam.categories
       };
       axios.put('/instructions/by_categories', form).then(function (response) {
-        _this2.levels = response.data;
-        _this2.chooseTopics = true;
-        _this2.busy = false;
+        _this3.levels = response.data;
+        _this3.chooseTopics = true;
+        _this3.busy = false;
       })["catch"](function (error) {
-        _this2.busy = false;
+        _this3.busy = false;
       });
     },
     // RECIBIR TOPICS SELECCIONADOS
@@ -3702,16 +3728,16 @@ __webpack_require__.r(__webpack_exports__);
     },
     // GUARDAR TOPICS
     save_topics: function save_topics() {
-      var _this3 = this;
+      var _this4 = this;
 
       // if(this.chooseTopics && this.check_level()){
       this.load = true; // if(!this.edit){
 
       axios.post('/exams/save_topics', this.exam).then(function (response) {
-        _this3.load = false;
-        if (response.data.message) swal("Importante", response.data.message, "warning");else _this3.$emit('topics_saved', response.data);
+        _this4.load = false;
+        if (response.data.message) swal("Importante", response.data.message, "warning");else _this4.$emit('topics_saved', response.data);
       })["catch"](function (error) {
-        _this3.load = false;
+        _this4.load = false;
         swal("Error", "Ocurrió un error al crear el exámen. Revisa tu conexión a internet y vuelve a intentarlo.", "warning");
       }); // } else {
       // let form_exam = { id: this.exam.id, topics: this.exam.topics };
@@ -3731,7 +3757,7 @@ __webpack_require__.r(__webpack_exports__);
     },
     // VERIFICAR EL NIVEL DE CADA TEMA SELECCIONADO
     check_level: function check_level() {
-      var _this4 = this;
+      var _this5 = this;
 
       // REVISAR QUE TODOS
       var lastLevel = this.levels[this.levels.length - 1];
@@ -3752,8 +3778,8 @@ __webpack_require__.r(__webpack_exports__);
           skills: []
         };
 
-        _this4.exam.categories.forEach(function (categorie_id) {
-          var c = _this4.categories.find(function (c) {
+        _this5.exam.categories.forEach(function (categorie_id) {
+          var c = _this5.categories.find(function (c) {
             return c.id == categorie_id;
           });
 
@@ -128962,21 +128988,6 @@ var render = function() {
                 ],
                 1
               )
-            : _vm._e(),
-          _vm._v(" "),
-          (_vm.exam.topics_count > 0 && _vm.exam.questions_count == 0) ||
-          _vm.step_3
-            ? _c(
-                "b-tab",
-                { attrs: { title: "Preguntas" } },
-                [
-                  _c("form-questions", {
-                    attrs: { exam: _vm.exam },
-                    on: { questions_created: _vm.questions_created }
-                  })
-                ],
-                1
-              )
             : _vm._e()
         ],
         1
@@ -129043,7 +129054,7 @@ var render = function() {
                         },
                         [
                           _c("b-icon-arrow-right-circle-fill"),
-                          _vm._v(" Continuar\n                ")
+                          _vm._v(" Iniciar\n                ")
                         ],
                         1
                       )
@@ -129059,7 +129070,7 @@ var render = function() {
         : _c(
             "b-tabs",
             { attrs: { pills: "", card: "", vertical: "" } },
-            _vm._l(_vm.examTopics, function(topic, i) {
+            _vm._l(_vm.levelTopics, function(topic, i) {
               return _c(
                 "b-tab",
                 {
@@ -129416,7 +129427,7 @@ var render = function() {
                                   },
                                   on: {
                                     click: function($event) {
-                                      return _vm.choose_topics()
+                                      return _vm.save_categories()
                                     }
                                   }
                                 },
@@ -158781,8 +158792,8 @@ __webpack_require__.r(__webpack_exports__);
 /*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
-__webpack_require__(/*! C:\Users\Yos_2\PROYECTOS\TRABAJO-ME\placement-test\resources\js\app.js */"./resources/js/app.js");
-module.exports = __webpack_require__(/*! C:\Users\Yos_2\PROYECTOS\TRABAJO-ME\placement-test\resources\sass\app.scss */"./resources/sass/app.scss");
+__webpack_require__(/*! C:\PROJECTS\placement-test\resources\js\app.js */"./resources/js/app.js");
+module.exports = __webpack_require__(/*! C:\PROJECTS\placement-test\resources\sass\app.scss */"./resources/sass/app.scss");
 
 
 /***/ }),

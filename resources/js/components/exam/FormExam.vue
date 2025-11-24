@@ -9,10 +9,10 @@
                 <form-topics :exam="exam" :edit="false" 
                     @topics_saved="topics_saved"></form-topics>
             </b-tab>
-            <b-tab v-if="(exam.topics_count > 0 && exam.questions_count == 0) || step_3" 
+            <!-- <b-tab v-if="(exam.topics_count > 0 && exam.questions_count == 0) || step_3" 
                 title="Preguntas">
                 <form-questions :exam="exam" @questions_created="questions_created"></form-questions>
-            </b-tab>
+            </b-tab> -->
         </b-tabs>
     </div>
 </template>

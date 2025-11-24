@@ -186,13 +186,6 @@ class ExamController extends Controller
         
         \DB::beginTransaction();
         try {
-            $categories->map(function($categorie) use(&$a, $exam){
-                \DB::table('categorie_exam')->insert([
-                    'categorie_id' => $categorie,
-                    'exam_id' => $exam->id
-                ]);
-            });
-
             $topics->map(function($topic) use(&$exam){
                 $exam->topics()->attach($topic['id']);
             });
@@ -727,50 +720,52 @@ class ExamController extends Controller
     // REVISAR SKILLS
     public function check_skills(Request $request){
         $questions = collect($request->questions);
-        if($questions->count() == 0){
-            return response()->json(['message' => 'Elegir mínimo una pregunta por cada tema.']);
-        } else {
-            $check_topics = $questions->unique('topic_id')->pluck('topic_id');
-            $exam = Exam::find($request->exam_id);
-            if($check_topics->count() < $exam->topics->count()){
-                $no_incluidos = $exam->topics->whereNotIn('id', $check_topics)->pluck('topic');
-                return response()->json(['message' => 'Elegir mínimo una pregunta de los temas: '.$no_incluidos]);
-            }
-
-            $categories = \DB::table('categorie_exam')
-                ->join('categories', 'categorie_exam.categorie_id', '=', 'categories.id')
-                ->select('categorie_id', 'exam_id', 'categories.categorie as categorie')
-                ->where([ 'exam_id' => $request->exam_id ])
-                ->get();
-
-            $levels_skills = collect();
-            $levels = \DB::table('levels')->orderBy('level', 'asc')->get();
-            $levels->map(function($level) use(&$levels_skills, $questions, $categories){
-                $skills = collect();
-                $questions->where('level_id', $level->id)->map(function($question) use(&$skills, $categories){
-                    if($categories->where('categorie_id', $question['categorie_id'])->count() > 0 && !$skills->contains('categorie_id', $question['categorie_id']))
-                        $skills->push(['categorie_id' => $question['categorie_id']]);
-                });
-                $levels_skills->push([
-                    'level_id' => $level->id, 
-                    'level' => $level->level,
-                    'skills' => $skills->count() 
-                ]);
-            });
-
-            $check_levels = $levels_skills->where('skills', '<', $categories->count());
-            if($check_levels->count() > 0){
-                return response()->json(['message' => 'Elegir '.$categories->pluck('categorie').' en los niveles: '.$check_levels->pluck('level')]);
-            }
-        }
-        
+        $categories = \DB::table('categorie_exam')->where('exam_id', $request->exam_id)->get();
+        if($questions->count() == 0 || $categories->whereNotIn('categorie_id', $questions->pluck('categorie_id'))->count() > 0){
+            return response()->json(['message' => 'Elegir mínimo una pregunta de cada skill.']);
+        } 
         return response()->json(true);
+        // else {
+            // $check_topics = $questions->unique('topic_id')->pluck('topic_id');
+            // $exam = Exam::find($request->exam_id);
+            // if($check_topics->count() < $exam->topics->count()){
+            //     $no_incluidos = $exam->topics->whereNotIn('id', $check_topics)->pluck('topic');
+            //     return response()->json(['message' => 'Elegir mínimo una pregunta de los temas: '.$no_incluidos]);
+            // }
+
+            // $categories = \DB::table('categorie_exam')
+            //     ->join('categories', 'categorie_exam.categorie_id', '=', 'categories.id')
+            //     ->select('categorie_id', 'exam_id', 'categories.categorie as categorie')
+            //     ->where([ 'exam_id' => $request->exam_id ])
+            //     ->get();
+
+            // $levels_skills = collect();
+            // $levels = \DB::table('levels')->orderBy('level', 'asc')->get();
+            // $levels->map(function($level) use(&$levels_skills, $questions, $categories){
+            // $skills = collect();
+            // $questions->where('level_id', $level->id)->map(function($question) use(&$skills, $categories){
+            //     if($categories->where('categorie_id', $question['categorie_id'])->count() > 0 && !$skills->contains('categorie_id', $question['categorie_id']))
+            //         $skills->push(['categorie_id' => $question['categorie_id']]);
+            // });
+            //     $levels_skills->push([
+            //         'level_id' => $level->id, 
+            //         'level' => $level->level,
+            //         'skills' => $skills->count() 
+            //     ]);
+            // });
+
+            // $check_levels = $levels_skills->where('skills', '<', $categories->count());
+            // if($check_levels->count() > 0){
+            //     return response()->json(['message' => 'Elegir '.$categories->pluck('categorie').' en los niveles: '.$check_levels->pluck('level')]);
+            // }
+        // }
     }
 
     // GUARDAR PREGUNTAS
     public function save_questions(Request $request){
         $questions = collect($request->questions);
         $exam = Exam::find($request->exam_id);
+        $level_id = (int) $request->level_id;
         \DB::beginTransaction();
         try {
             $questions->map(function($question) use (&$exam){
@@ -796,17 +791,22 @@ class ExamController extends Controller
             \DB::rollBack();
         }
         // ExamSJob::dispatch($questions, $exam);
-        return response()->json();
+        if($level_id < Level::count()) return response()->json($level_id + 1);
+        return response()->json(0);
     }
 
     // OBTENER TEMAS DEL EXAMEN
     public function get_topics(Request $request){
-        $exam = Exam::whereId($request->exam_id)
-                    ->with('topics.level', 'topics.instructions.questions', 'topics.instructions.categorie')->first();
-        $topics = collect();
-        $exam->topics->map(function($topic) use (&$topics){
+        $exam_id = (int) $request->exam_id;
+        $level_id = (int) $request->level_id;
+        $topics = Exam::find($exam_id)->topics()->where('level_id', $level_id)
+                        ->wherePivot('status', false)->get();
+        $categories = \DB::table('categorie_exam')->where('exam_id', $exam_id)->pluck('categorie_id');
+        
+        $topics_save = collect();
+        $topics->map(function($topic) use (&$topics_save, $categories){
             $instructions = collect();
-            $topic->instructions->map(function($instruction) use(&$instructions){
+            $topic->instructions->whereIn('categorie_id', $categories)->map(function($instruction) use(&$instructions){
                 $questions = collect();
                 $instruction->questions->map(function($question) use(&$questions){
                     $questions->push([
@@ -833,7 +833,7 @@ class ExamController extends Controller
                     'questions' => $questions
                 ]);
             });
-            $topics->push([
+            $topics_save->push([
                 'id' => $topic->id,
                 'level_id' => $topic->level_id, 
                 'topic' => $topic->topic,
@@ -841,7 +841,7 @@ class ExamController extends Controller
                 'instructions' => $instructions
             ]);
         });
-        return response()->json($topics);
+        return response()->json($topics_save);
     }
 
     // NOTIFICACIÓN DE EXAMEN A CADA ALUMNO
@@ -1040,6 +1040,25 @@ class ExamController extends Controller
             \DB::rollBack();
         }
         
+        return response()->json(true);
+    }
+
+    public function save_categories(Request $request){
+        $categories = collect($request->categories);
+        $exam_id = (int)$request->exam_id;
+        \DB::beginTransaction();
+        try {
+            $categories->map(function($categorie) use($exam_id){
+                \DB::table('categorie_exam')->insert([
+                    'categorie_id' => $categorie,
+                    'exam_id' => $exam_id
+                ]);
+            });
+            \DB::commit();
+        }  catch (Exception $e) {
+            \DB::rollBack();
+        }
+
         return response()->json(true);
     }
 }

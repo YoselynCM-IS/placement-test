@@ -125,6 +125,7 @@ Route::name('exams.')->prefix('exams')->middleware(['auth'])
 ->group(function () {
     Route::get('create', 'ExamController@create' )->name('create');
     Route::post('store', 'ExamController@store' )->name('store');
+    Route::post('save_categories', 'ExamController@save_categories' )->name('save_categories');
     Route::post('save_topics', 'ExamController@save_topics' )->name('save_topics');
     Route::post('save_questions', 'ExamController@save_questions' )->name('save_questions');
     Route::put('update', 'ExamController@update' )->name('update');

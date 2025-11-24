@@ -16,7 +16,7 @@
                     </b-col>
                     <b-col sm="3">
                         <b-button pill :disabled="load || exam.categories.length == 0" 
-                                block id="btn-actions"  @click="choose_topics()">
+                                block id="btn-actions"  @click="save_categories()">
                             <b-icon-arrow-right-circle-fill></b-icon-arrow-right-circle-fill> Continuar
                         </b-button>
                     </b-col>
@@ -100,6 +100,16 @@ export default {
             .catch(error => { });
     },
     methods: {
+        // GUARDAR SKILLS SELECCIONADAS
+        save_categories(){
+            this.busy = true;
+            let form = { exam_id: this.exam.id, categories: this.exam.categories };
+            axios.post('/exams/save_categories', form).then(response => {
+                this.choose_topics();
+            }).catch(error => {
+                this.busy = false;
+            });
+        },
         // ELEGIR TEMAS
         choose_topics() {
             this.busy = true;
